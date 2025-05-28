@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {BookType} from '@/components/book/BookCard.tsx'
+
 import {
     Plus,
     Book,
@@ -13,6 +13,7 @@ import {
     Filter
 } from 'lucide-react';
 import BookCard from "@/components/book/BookCard.tsx";
+import {BookType} from "@/components/book/bookTypes.ts";
 
 
 // Main LibraryPage Page Component
@@ -25,7 +26,7 @@ const LibraryPage: React.FC = () => {
             author: 'F. Scott Fitzgerald',
             isbn: '978-0-7432-7356-5',
             owner: 'john@example.com',
-            createdAt: '2024-01-15T10:30:00Z',
+            createdAt: Date.parse('2024-01-15T10:30:00Z'),
             loanedOut: false,
         },
         {
@@ -34,7 +35,7 @@ const LibraryPage: React.FC = () => {
             author: 'Harper Lee',
             isbn: '978-0-06-112008-4',
             owner: 'jane@example.com',
-            createdAt: '2024-02-20T14:45:00Z',
+            createdAt: Date.parse('2024-02-20T14:45:00Z'),
             loanedOut: true,
             loanedTo: 'alice@example.com',
         },
@@ -43,7 +44,7 @@ const LibraryPage: React.FC = () => {
             title: '1984',
             author: 'George Orwell',
             owner: 'bob@example.com',
-            createdAt: '2024-03-10T09:15:00Z',
+            createdAt: Date.parse('2024-03-10T09:15:00Z'),
             loanedOut: false,
         },
         {
@@ -52,7 +53,7 @@ const LibraryPage: React.FC = () => {
             author: 'Jane Austen',
             isbn: '978-0-14-143951-8',
             owner: 'sarah@example.com',
-            createdAt: '2024-03-25T16:20:00Z',
+            createdAt: Date.parse('2024-03-25T16:20:00Z'),
             loanedOut: true,
             loanedTo: 'charlie@example.com',
         },
@@ -61,7 +62,7 @@ const LibraryPage: React.FC = () => {
             title: 'The Catcher in the Rye',
             author: 'J.D. Salinger',
             owner: 'mike@example.com',
-            createdAt: '2024-04-05T11:10:00Z',
+            createdAt: Date.parse('2024-04-05T11:10:00Z'),
             loanedOut: false,
         },
         {
@@ -70,7 +71,7 @@ const LibraryPage: React.FC = () => {
             author: 'J.K. Rowling',
             isbn: '978-0-7475-3269-6',
             owner: 'emma@example.com',
-            createdAt: '2024-04-18T13:30:00Z',
+            createdAt: Date.parse('2024-04-18T13:30:00Z'),
             loanedOut: false,
         },
     ];
