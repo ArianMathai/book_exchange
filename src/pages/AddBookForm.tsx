@@ -142,7 +142,7 @@ const AddBookForm: React.FC = () => {
 
     // Handle cancel/back
     const handleCancel = () => {
-        navigate(-1);
+        navigate("/library");
     };
 
     if (submitSuccess) {
