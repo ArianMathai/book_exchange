@@ -1,6 +1,5 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -84,15 +83,8 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
                 <div className="flex items-center justify-between w-full">
                     <div className="flex items-center text-xs text-slate-500">
                         <Book className="w-3 h-3 mr-1" />
-                        <span>Owner: {book.ownerEmail}</span>
+                        <span>{book.ownerEmail}</span>
                     </div>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-slate-600 hover:text-red-600 hover:bg-red-50 transition-colors duration-200"
-                    >
-                        View Details
-                    </Button>
                 </div>
             </CardFooter>
         </Card>
