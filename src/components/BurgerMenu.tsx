@@ -15,7 +15,7 @@ const BurgerMenu: React.FC = () => {
 
     const menuItems = [
         { to: '/', icon: Home, label: 'Home', description: 'Dashboard & Overview' },
-        { to: '/books', icon: Book, label: 'Book List', description: 'Browse available books' },
+        { to: '/library', icon: Book, label: 'Library', description: 'Manage your library' },
         { to: '/add-book', icon: Plus, label: 'Add Book', description: 'Share a new book', badge: 'New' },
         { to: '/profile', icon: User, label: 'Profile', description: 'Account settings' },
     ];
@@ -74,7 +74,7 @@ const BurgerMenu: React.FC = () => {
                             variant="ghost"
                             size="sm"
                             onClick={signOut}
-                            className="text-red-200 hover:text-red-100 hover:bg-red-800/40 transition-colors duration-200"
+                            className="text-red-200 hover:text-red-100 hover:bg-red-800/40 transition-colors duration-200 cursor-pointer"
                         >
                             <LogOut className="w-4 h-4 mr-2" />
                             Sign Out
@@ -167,7 +167,7 @@ const BurgerMenu: React.FC = () => {
                                         variant="ghost"
                                         size="lg"
                                         onClick={handleSignOut}
-                                        className="w-full justify-start h-auto p-4 hover:bg-red-800/40 transition-all duration-300 group text-red-200 hover:text-red-100"
+                                        className="w-full justify-start h-auto p-4 hover:bg-red-800/40 transition-all duration-300 group text-red-200 hover:text-red-100 cursor-pointer"
                                     >
                                         <div className="flex items-center space-x-4 w-full">
                                             <div className="p-3 bg-red-800/40 rounded-xl group-hover:bg-red-700/50 transition-all duration-300 group-hover:scale-110">

@@ -1,11 +1,10 @@
 import { RouteObject } from 'react-router-dom';
 
-
-
 import BurgerMenu from '../components/BurgerMenu.tsx';
 import Profile from "@/pages/Profile.tsx";
-//import BookList from "@/pages/BookList.tsx";
-import Home from "@/pages/Home.tsx"; // BurgerMenu component with Outlet
+import Home from "@/pages/Home.tsx";
+import LibraryPage from "@/pages/LibraryPage.tsx";
+import AddBookForm from "@/pages/AddBookForm.tsx";
 
 export const routes: RouteObject[] = [
     {
@@ -14,6 +13,8 @@ export const routes: RouteObject[] = [
         children: [
             { path: '/', element: <Home /> },
             { path: '/profile', element: <Profile /> },
+            { path: '/library', element: <LibraryPage /> },
+            { path: '/add-book', element: <AddBookForm /> },
         ],
     },
 ];
