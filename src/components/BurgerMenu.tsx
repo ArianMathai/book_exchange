@@ -15,7 +15,7 @@ const BurgerMenu: React.FC = () => {
 
     const menuItems = [
         { to: '/', icon: Home, label: 'Home', description: 'Dashboard & Overview' },
-        { to: '/books', icon: Book, label: 'Book List', description: 'Browse available books' },
+        { to: '/library', icon: Book, label: 'LibraryPage', description: 'Manage your library' },
         { to: '/add-book', icon: Plus, label: 'Add Book', description: 'Share a new book', badge: 'New' },
         { to: '/profile', icon: User, label: 'Profile', description: 'Account settings' },
     ];
