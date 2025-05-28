@@ -134,7 +134,6 @@ const AddBookForm: React.FC = () => {
 
         } catch (error) {
             console.error('Error creating book:', error);
-            // Handle error (you might want to show an error message)
         } finally {
             setIsSubmitting(false);
         }
