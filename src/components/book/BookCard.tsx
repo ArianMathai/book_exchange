@@ -74,7 +74,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
                 </div>
             </CardContent>
 
-            <Separator className="mx-6" />
+            <Separator  />
 
             <CardFooter className="pt-4">
                 <div className="flex items-center justify-between w-full">
