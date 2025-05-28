@@ -18,13 +18,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils.ts';
 import { client} from "@/lib/amplifyClient.ts";
+import {fetchUserAttributes} from "aws-amplify/auth";
 
 // Form data interface matching your book model
 interface BookFormData {
     title: string;
     author: string;
     isbn: string;
-    owner: string;
 }
 
 // Form errors interface
@@ -42,7 +42,6 @@ const AddBookForm: React.FC = () => {
         title: '',
         author: '',
         isbn: '',
-        owner: '', // This would typically be auto-filled from auth context
     });
 
     const [errors, setErrors] = useState<FormErrors>({});
@@ -66,14 +65,8 @@ const AddBookForm: React.FC = () => {
             newErrors.author = 'Author name must be at least 2 characters long';
         }
 
-        if (!formData.owner.trim()) {
-            newErrors.owner = 'Owner email is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.owner)) {
-            newErrors.owner = 'Please enter a valid email address';
-        }
 
-        // ISBN validation (optional but if provided, should be valid format)
-
+        // ISBN validation
         if (formData.isbn.trim() && !/^(?:\d{10}|\d{13}|(?:\d{3}-?)?\d{1,5}-?\d{1,7}-?\d{1,7}-?[\dX])$/.test(formData.isbn.replace(/[-\s]/g, ''))) {
             newErrors.isbn = 'Please enter a valid ISBN (10 or 13 digits)';
         }
@@ -104,13 +97,27 @@ const AddBookForm: React.FC = () => {
 
         setIsSubmitting(true);
 
+        const attributes = await fetchUserAttributes();
+        const sub = attributes.sub;
+        const ownerEmail = attributes.email
+
+        if (!sub) {
+            console.error('❌ Missing user sub (Cognito ID)');
+            return;
+        }
+        if (!ownerEmail) {
+            console.error('❌ Missing user email');
+            return;
+        }
+
         try {
             // Use the existing createBook helper and then pass to AddBook
             const bookData = {
                 title: formData.title.trim(),
                 author: formData.author.trim(),
                 isbn: formData.isbn.trim() || null,
-                owner: formData.owner.trim(),
+                owner: sub,
+                ownerEmail: ownerEmail,
                 createdAt: Math.floor(Date.now() / 1000), // Unix timestamp
                 loanedOut: false,
                 loanedTo: null
@@ -287,33 +294,6 @@ const AddBookForm: React.FC = () => {
                                 <p className="text-xs text-slate-500">
                                     Example: 978-0-123456-78-9 or 0123456789
                                 </p>
-                            </div>
-
-                            {/* Owner Field */}
-                            <div className="space-y-2">
-                                <Label htmlFor="owner" className="text-sm font-medium text-slate-700 flex items-center">
-                                    <User className="w-4 h-4 mr-1.5 text-slate-500" />
-                                    Owner Email *
-                                </Label>
-                                <Input
-                                    id="owner"
-                                    type="email"
-                                    placeholder="Enter owner's email address"
-                                    value={formData.owner}
-                                    onChange={(e) => handleInputChange('owner', e.target.value)}
-                                    className={cn(
-                                        "transition-colors duration-200",
-                                        errors.owner
-                                            ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                                            : "border-slate-300 focus:border-red-500 focus:ring-red-500"
-                                    )}
-                                />
-                                {errors.owner && (
-                                    <div className="flex items-center text-sm text-red-600 mt-1">
-                                        <AlertCircle className="w-4 h-4 mr-1" />
-                                        {errors.owner}
-                                    </div>
-                                )}
                             </div>
 
                             <Separator className="my-6" />

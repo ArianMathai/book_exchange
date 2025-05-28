@@ -61,7 +61,11 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
 
                     <div className="flex items-center text-sm text-slate-600">
                         <Calendar className="w-4 h-4 mr-2 text-slate-400" />
-                        <span>Added {book.createdAt}</span>
+                        Added {new Date(book.createdAt * 1000).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                    })}
                     </div>
 
                     {book.loanedOut && book.loanedTo && (
@@ -80,7 +84,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
                 <div className="flex items-center justify-between w-full">
                     <div className="flex items-center text-xs text-slate-500">
                         <Book className="w-3 h-3 mr-1" />
-                        <span>Owner: {book.owner}</span>
+                        <span>Owner: {book.ownerEmail}</span>
                     </div>
                     <Button
                         variant="ghost"

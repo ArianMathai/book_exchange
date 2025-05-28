@@ -12,11 +12,13 @@ const schema = a.schema({
     author: a.string().required(),
     isbn: a.string(), // optional
     owner: a.string().required(),
+    ownerEmail: a.string().required(),
     createdAt: a.timestamp().required(),
     loanedOut: a.boolean().required(),
-    loanedTo: a.string(), // email of user
+    loanedTo: a.string(),
   }).authorization(allow => [allow.owner()]),
 });
+
 
 export type Schema = ClientSchema<typeof schema>;
 
