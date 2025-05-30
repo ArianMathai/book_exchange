@@ -33,7 +33,7 @@ const LibraryPage: React.FC = () => {
         try {
             console.log('📚 Calling Book.list()...');
             const result = await client.models.Book.list({
-                selectionSet: ['id','title', 'author', 'isbn', 'ownerEmail', 'createdAt', 'loanedOut', 'loanedTo']
+                selectionSet: ['id','title', 'author', 'isbn', 'ownerEmail', 'createdAt', 'loanedOut', 'loanedTo', 'imageSource', 'imageUrl']
             });
 
             if (result.errors && result.errors.length > 0) {
@@ -42,8 +42,24 @@ const LibraryPage: React.FC = () => {
                 return;
             }
 
-            const fetchedBooks = result.data ?? [];
-            setBooks(fetchedBooks);
+            const rawBooks = result.data ?? [];
+            const transformedBooks: BookType[] = rawBooks.map(book => ({
+                id: book.id,
+                title: book.title,
+                author: book.author,
+                isbn: book.isbn,
+                ownerEmail: book.ownerEmail,
+                createdAt: book.createdAt,
+                loanedOut: book.loanedOut,
+                loanedTo: book.loanedTo,
+                imageUrl: book.imageUrl,
+                imageSource: book.imageSource === 'manual' || book.imageSource === 'google_books'
+                    ? book.imageSource
+                    : null, // Normalize to 'manual', 'google_books', or null
+            }));
+            console.log('Transformed books:', transformedBooks);
+            setBooks(transformedBooks);
+
 
         } catch (error) {
             console.error('💥 Error fetching books:', error);

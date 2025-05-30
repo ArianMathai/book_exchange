@@ -8,6 +8,8 @@ export interface BookType {
     createdAt: number;
     loanedOut: boolean;
     loanedTo?: string | null;
+    imageUrl?: string | null;
+    imageSource?: 'manual' | 'google_books' | null;
 }
 
 // Book Card Component
