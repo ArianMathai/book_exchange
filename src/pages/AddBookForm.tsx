@@ -570,8 +570,8 @@ const AddBookForm: React.FC = () => {
                                                     accessLevel="private"
                                                     acceptedFileTypes={['image/*']}
                                                     maxFileSize={5000000} // 5MB
+                                                    maxFileCount={1} // Add the required maxFileCount prop
                                                     path="bookImages/"
-                                                    showImages={true}
                                                     isResumable={true}
                                                     onUploadStart={() => {
                                                         setIsUploading(true);
@@ -583,7 +583,15 @@ const AddBookForm: React.FC = () => {
                                                     onUploadSuccess={(data) => {
                                                         setIsUploading(false);
                                                         setImageSource('manual');
-                                                        setUploadedS3Key(data.key);
+                                                        // Add null check for data.key
+                                                        if (data.key) {
+                                                            setUploadedS3Key(data.key);
+                                                        } else {
+                                                            setErrors(prev => ({ 
+                                                                ...prev, 
+                                                                image: 'Failed to upload image: No file key returned' 
+                                                            }));
+                                                        }
                                                     }}
                                                     onUploadError={(error) => {
                                                         setIsUploading(false);
@@ -603,7 +611,7 @@ const AddBookForm: React.FC = () => {
                                                                 {children}
                                                             </div>
                                                         ),
-                                                        FilePicker: ({ openFileBrowser, children }) => (
+                                                        FilePicker: ({ children, ...props }) => (
                                                             <div className="flex flex-col items-center">
                                                                 <div className="mb-4 p-3 bg-slate-100 rounded-full">
                                                                     <Camera className="w-6 h-6 text-slate-400" />
@@ -614,7 +622,7 @@ const AddBookForm: React.FC = () => {
                                                                 <Button 
                                                                     type="button" 
                                                                     variant="outline" 
-                                                                    onClick={openFileBrowser}
+                                                                    onClick={props.onClick}
                                                                 >
                                                                     <Upload className="w-4 h-4 mr-2" />
                                                                     Select Photo
