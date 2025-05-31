@@ -1,4 +1,4 @@
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { Button } from '@/components/ui/button';
 import {Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription} from '@/components/ui/sheet';
@@ -11,6 +11,7 @@ import { useState } from 'react';
 // Collapsible menu on mobile and sticky menu on desktop
 const BurgerMenu: React.FC = () => {
     const { signOut } = useAuthenticator();
+    const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
 
     const menuItems = [
@@ -25,8 +26,13 @@ const BurgerMenu: React.FC = () => {
         signOut();
     };
 
-    const handleMenuItemClick = () => {
+    const handleMenuItemClick = (path: string) => {
         setIsOpen(false);
+        navigate(path);
+    };
+
+    const handleDesktopNavigation = (path: string) => {
+        navigate(path);
     };
 
     return (
@@ -53,19 +59,17 @@ const BurgerMenu: React.FC = () => {
                                     key={item.to}
                                     variant="ghost"
                                     size="sm"
-                                    asChild
-                                    className="text-red-100 hover:text-white hover:bg-red-800/40 transition-all duration-200 relative group"
+                                    onClick={() => handleDesktopNavigation(item.to)}
+                                    className="text-red-100 hover:text-white hover:bg-red-800/40 transition-all duration-200 relative group cursor-pointer flex items-center space-x-2 px-4 py-2"
                                 >
-                                    <Link to={item.to} className="flex items-center space-x-2 px-4 py-2">
-                                        <IconComponent className="w-4 h-4" />
-                                        <span className="font-medium">{item.label}</span>
-                                        {item.badge && (
-                                            <Badge variant="secondary" className="ml-1 text-xs bg-red-200 text-red-900 hover:bg-red-100">
-                                                {item.badge}
-                                            </Badge>
-                                        )}
-                                        <div className="absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-red-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                    </Link>
+                                    <IconComponent className="w-4 h-4" />
+                                    <span className="font-medium">{item.label}</span>
+                                    {item.badge && (
+                                        <Badge variant="secondary" className="ml-1 text-xs bg-red-200 text-red-900 hover:bg-red-100">
+                                            {item.badge}
+                                        </Badge>
+                                    )}
+                                    <div className="absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-red-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                 </Button>
                             );
                         })}
@@ -125,37 +129,35 @@ const BurgerMenu: React.FC = () => {
                                                 key={item.to}
                                                 variant="ghost"
                                                 size="lg"
-                                                asChild
-                                                className="w-full justify-start text-left h-auto p-4 hover:bg-red-800/30 transition-all duration-300 group relative overflow-hidden"
+                                                onClick={() => handleMenuItemClick(item.to)}
+                                                className="w-full justify-start text-left h-auto p-4 hover:bg-red-800/30 transition-all duration-300 group relative overflow-hidden cursor-pointer"
                                                 style={{
                                                     animationDelay: `${index * 100}ms`,
                                                     animation: isOpen ? 'slideInRight 0.4s ease-out forwards' : undefined
                                                 }}
                                             >
-                                                <Link to={item.to} onClick={handleMenuItemClick}>
-                                                    <div className="flex items-center space-x-4 w-full">
-                                                        <div className="p-3 bg-red-800/40 rounded-xl group-hover:bg-red-700/50 transition-all duration-300 group-hover:scale-110">
-                                                            <IconComponent className="w-5 h-5 text-red-100" />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center space-x-2">
-                                                                <span className="font-semibold text-red-50 group-hover:text-white transition-colors duration-300">
-                                                                    {item.label}
-                                                                </span>
-                                                                {item.badge && (
-                                                                    <Badge variant="secondary" className="bg-red-200 text-red-900 text-xs">
-                                                                        {item.badge}
-                                                                    </Badge>
-                                                                )}
-                                                            </div>
-                                                            <p className="text-red-300/80 text-sm mt-1 group-hover:text-red-200/90 transition-colors duration-300">
-                                                                {item.description}
-                                                            </p>
-                                                        </div>
+                                                <div className="flex items-center space-x-4 w-full">
+                                                    <div className="p-3 bg-red-800/40 rounded-xl group-hover:bg-red-700/50 transition-all duration-300 group-hover:scale-110">
+                                                        <IconComponent className="w-5 h-5 text-red-100" />
                                                     </div>
-                                                    {/* Hover effect */}
-                                                    <div className="absolute inset-0 bg-gradient-to-r from-red-700/0 via-red-700/5 to-red-700/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                                </Link>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center space-x-2">
+                                                            <span className="font-semibold text-red-50 group-hover:text-white transition-colors duration-300">
+                                                                {item.label}
+                                                            </span>
+                                                            {item.badge && (
+                                                                <Badge variant="secondary" className="bg-red-200 text-red-900 text-xs">
+                                                                    {item.badge}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-red-300/80 text-sm mt-1 group-hover:text-red-200/90 transition-colors duration-300">
+                                                            {item.description}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {/* Hover effect */}
+                                                <div className="absolute inset-0 bg-gradient-to-r from-red-700/0 via-red-700/5 to-red-700/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                             </Button>
                                         );
                                     })}
@@ -198,8 +200,6 @@ const BurgerMenu: React.FC = () => {
             <main className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
                 <Outlet />
             </main>
-
-
         </div>
     );
 };

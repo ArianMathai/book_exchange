@@ -10,8 +10,6 @@ import {
     CheckCircle,
     AlertCircle,
     Image as ImageIcon,
-    Camera,
-    Search,
     Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -19,7 +17,7 @@ import { BookCardProps } from "@/components/book/bookTypes.ts";
 import { getUrl } from "aws-amplify/storage";
 
 const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
-    console.log("book: ",book);
+    console.log("book: ", book);
     const [imageLoading, setImageLoading] = useState(book.imageUrl ? true : false);
     const [imageError, setImageError] = useState(false);
     const [resolvedImageUrl, setResolvedImageUrl] = useState<string | null>(null);
@@ -28,8 +26,6 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
     const hasImage = resolvedImageUrl && !imageError;
 
 
-
-    
     // Resolve S3 URLs for manual uploads
     useEffect(() => {
         const resolveImageUrl = async () => {
@@ -54,7 +50,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
                     if (book.imageUrl.startsWith('bookImages/')) {
                         console.log('Fetching signed URL for:', book.imageUrl);
                         try {
-                            const { url } = await getUrl({
+                            const {url} = await getUrl({
                                 path: book.imageUrl,
                                 options: {
                                     validateObjectExistence: true,
@@ -86,44 +82,21 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
 
         resolveImageUrl();
     }, [book.imageUrl, book.imageSource]);
-    
+
     // Function to handle image load success
     const handleImageLoad = () => {
         setImageLoading(false);
     };
-    
+
     // Function to handle image load error
     const handleImageError = () => {
         setImageLoading(false);
         setImageError(true);
     };
 
-    // Function to get source badge text and icon
-    const getSourceBadge = () => {
-        if (!book.imageSource) return null;
-        
-        switch (book.imageSource) {
-            case 'manual':
-                return {
-                    icon: <Camera className="w-3 h-3 mr-1" />,
-                    text: 'Manual',
-                    className: 'bg-purple-100 text-purple-800 hover:bg-purple-200'
-                };
-            case 'google_books':
-                return {
-                    icon: <Search className="w-3 h-3 mr-1" />,
-                    text: 'Google Books',
-                    className: 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                };
-            default:
-                return null;
-        }
-    };
-    
-    const sourceBadge = getSourceBadge();
 
     useEffect(() => {
-        console.log("Resimgurl ",resolvedImageUrl);
+        console.log("Resimgurl ", resolvedImageUrl);
 
     }, [resolvedImageUrl]);
 
@@ -132,16 +105,17 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
             "group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-slate-200 hover:border-red-200",
             className
         )}>
-            <div className="flex flex-col sm:flex-row">
+            <div className="flex flex-row">
                 {/* Book Cover Image Section */}
-                <div className="w-full sm:w-[100px] flex-shrink-0 p-3 sm:p-4">
-                    <div className="relative w-full sm:w-[100px] h-[150px] sm:h-[150px] bg-slate-100 rounded-md overflow-hidden">
+                <div className="w-[80px] sm:w-[100px] flex-shrink-0 p-2 sm:p-4">
+                    {/* Consistent horizontal layout for all screen sizes */}
+                    <div className="relative w-[80px] sm:w-[100px] h-[120px] sm:h-[150px] bg-slate-100 rounded-md overflow-hidden">
                         {(imageLoading || isResolvingUrl) && (
                             <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
                                 <Loader2 className="w-8 h-8 text-slate-400 animate-spin" />
                             </div>
                         )}
-                        
+
                         {hasImage ? (
                             <>
                                 <img
@@ -152,47 +126,38 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
                                     onError={handleImageError}
                                     style={{ display: (imageLoading || isResolvingUrl) ? 'none' : 'block' }}
                                 />
-                                {sourceBadge && (
-                                    <Badge 
-                                        variant="secondary" 
-                                        className={cn("absolute top-1 right-1 text-[10px]", sourceBadge.className)}
-                                    >
-                                        {sourceBadge.icon}
-                                        {sourceBadge.text}
-                                    </Badge>
-                                )}
                             </>
                         ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 rounded-md">
                                 <ImageIcon className="w-12 h-12 text-slate-300" />
-                                <span className="text-xs text-slate-400 mt-2">No cover</span>
+                                <span className="text-xs text-slate-400 mt-2 text-center">No cover</span>
                             </div>
                         )}
                     </div>
                 </div>
 
                 {/* Book Information Section */}
-                <div className="flex-1 flex flex-col min-w-0">
-                    <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
+                <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                    <CardHeader className="pb-3 pt-3 sm:pt-6">
+                        <div className="flex items-start gap-2 sm:gap-3">
                             <div className="flex-1 min-w-0">
-                                <CardTitle className="text-lg font-bold text-slate-900 group-hover:text-red-900 transition-colors duration-300 line-clamp-2">
+                                <CardTitle className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-red-900 transition-colors duration-300 line-clamp-2 break-words">
                                     {book.title}
                                 </CardTitle>
-                                <CardDescription className="flex items-center mt-2 text-slate-600">
-                                    <User className="w-4 h-4 mr-1.5 flex-shrink-0" />
-                                    <span className="truncate">{book.author}</span>
+                                <CardDescription className="flex items-center mt-1 sm:mt-2 text-slate-600 min-w-0">
+                                    <User className="w-3 sm:w-4 h-3 sm:h-4 mr-1 sm:mr-1.5 flex-shrink-0" />
+                                    <span className="truncate text-sm sm:text-base">{book.author}</span>
                                 </CardDescription>
                             </div>
-                            <div className="ml-3 flex-shrink-0">
+                            <div className="flex-shrink-0">
                                 {book.loanedOut ? (
-                                    <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-200">
-                                        <AlertCircle className="w-3 h-3 mr-1" />
+                                    <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-200 whitespace-nowrap text-xs sm:text-sm">
+                                        <AlertCircle className="w-2.5 sm:w-3 h-2.5 sm:h-3 mr-0.5 sm:mr-1" />
                                         Loaned
                                     </Badge>
                                 ) : (
-                                    <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-200">
-                                        <CheckCircle className="w-3 h-3 mr-1" />
+                                    <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-200 whitespace-nowrap text-xs sm:text-sm">
+                                        <CheckCircle className="w-2.5 sm:w-3 h-2.5 sm:h-3 mr-0.5 sm:mr-1" />
                                         Available
                                     </Badge>
                                 )}
@@ -200,27 +165,29 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
                         </div>
                     </CardHeader>
 
-                    <CardContent className="pb-3">
-                        <div className="space-y-3">
+                    <CardContent className="pb-2 sm:pb-3 flex-1">
+                        <div className="space-y-2 sm:space-y-3">
                             {book.isbn && (
-                                <div className="flex items-center text-sm text-slate-600">
-                                    <Hash className="w-4 h-4 mr-2 text-slate-400" />
-                                    <span className="font-mono">{book.isbn}</span>
+                                <div className="flex items-center text-xs sm:text-sm text-slate-600 min-w-0">
+                                    <Hash className="w-3 sm:w-4 h-3 sm:h-4 mr-1 sm:mr-2 text-slate-400 flex-shrink-0" />
+                                    <span className="font-mono truncate">{book.isbn}</span>
                                 </div>
                             )}
 
-                            <div className="flex items-center text-sm text-slate-600">
-                                <Calendar className="w-4 h-4 mr-2 text-slate-400" />
+                            <div className="flex items-center text-xs sm:text-sm text-slate-600">
+                                <Calendar className="w-3 sm:w-4 h-3 sm:h-4 mr-1 sm:mr-2 text-slate-400 flex-shrink-0" />
+                                <span className="truncate">
                                 Added {new Date(book.createdAt * 1000).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                            })}
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                })}
+                            </span>
                             </div>
 
                             {book.loanedOut && book.loanedTo && (
-                                <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-100">
-                                    <p className="text-sm text-red-700">
+                                <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-red-50 rounded-lg border border-red-100">
+                                    <p className="text-xs sm:text-sm text-red-700 break-words">
                                         <span className="font-medium">Loaned to:</span> {book.loanedTo}
                                     </p>
                                 </div>
@@ -229,13 +196,12 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
                     </CardContent>
 
                     <div className="mt-auto">
-                        <Separator  />
-
-                        <CardFooter className="pt-4">
-                            <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center text-xs text-slate-500">
-                                    <Book className="w-3 h-3 mr-1" />
-                                    <span>{book.ownerEmail}</span>
+                        <Separator />
+                        <CardFooter className="pt-3 sm:pt-4">
+                            <div className="flex items-center justify-between w-full min-w-0">
+                                <div className="flex items-center text-xs text-slate-500 min-w-0">
+                                    <Book className="w-2.5 sm:w-3 h-2.5 sm:h-3 mr-1 flex-shrink-0" />
+                                    <span className="truncate">{book.ownerEmail}</span>
                                 </div>
                             </div>
                         </CardFooter>
@@ -244,5 +210,5 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
             </div>
         </Card>
     );
-};
+}
 export default BookCard;
