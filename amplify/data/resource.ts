@@ -16,8 +16,29 @@ const schema = a.schema({
     createdAt: a.timestamp().required(),
     loanedOut: a.boolean().required(),
     loanedTo: a.string(),
+    imageUrl: a.string(), // optional - stores the book cover image URL
+    imageSource: a.string(), // optional - tracks how the image was obtained ('manual', 'google_books', or null)
   }).authorization(allow => [allow.owner()]),
 });
+
+// Might switch to this to allow :
+/**
+
+ Book: a.model({
+   title: a.string().required(),
+   author: a.string().required(),
+   isbn: a.string(),
+   owner: a.string().required(),
+   ownerEmail: a.string().required(),
+   createdAt: a.timestamp().required(),
+   loanedOut: a.boolean().required(),
+   loanedTo: a.string(),
+ }).authorization(allow => [
+ allow.auth().to(['read']),      // all signed-in users can read books
+ allow.owner().to(['create', 'update', 'delete']), // only owner can write
+ ]);
+
+ */
 
 
 export type Schema = ClientSchema<typeof schema>;

@@ -33,7 +33,7 @@ const LibraryPage: React.FC = () => {
         try {
             console.log('📚 Calling Book.list()...');
             const result = await client.models.Book.list({
-                selectionSet: ['id','title', 'author', 'isbn', 'ownerEmail', 'createdAt', 'loanedOut', 'loanedTo']
+                selectionSet: ['id','title', 'author', 'isbn', 'ownerEmail', 'createdAt', 'loanedOut', 'loanedTo', 'imageSource', 'imageUrl']
             });
 
             if (result.errors && result.errors.length > 0) {
@@ -42,8 +42,24 @@ const LibraryPage: React.FC = () => {
                 return;
             }
 
-            const fetchedBooks = result.data ?? [];
-            setBooks(fetchedBooks);
+            const rawBooks = result.data ?? [];
+            const transformedBooks: BookType[] = rawBooks.map(book => ({
+                id: book.id,
+                title: book.title,
+                author: book.author,
+                isbn: book.isbn,
+                ownerEmail: book.ownerEmail,
+                createdAt: book.createdAt,
+                loanedOut: book.loanedOut,
+                loanedTo: book.loanedTo,
+                imageUrl: book.imageUrl,
+                imageSource: book.imageSource === 'manual' || book.imageSource === 'google_books'
+                    ? book.imageSource
+                    : null, // Normalize to 'manual', 'google_books', or null
+            }));
+            console.log('Transformed books:', transformedBooks);
+            setBooks(transformedBooks);
+
 
         } catch (error) {
             console.error('💥 Error fetching books:', error);
@@ -96,44 +112,44 @@ const LibraryPage: React.FC = () => {
                 </div>
 
                 {/* Statistics Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8">
                     <Card className="bg-white border-slate-200">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-600">Total Books</p>
-                                    <p className="text-2xl font-bold text-slate-900">{books.length}</p>
+                        <CardContent className="p-3 sm:p-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                <div className="mb-2 sm:mb-0">
+                                    <p className="text-xs sm:text-sm font-medium text-slate-600">Total Books</p>
+                                    <p className="text-lg sm:text-2xl font-bold text-slate-900">{books.length}</p>
                                 </div>
-                                <div className="p-3 bg-blue-100 rounded-lg">
-                                    <Book className="w-6 h-6 text-blue-600" />
+                                <div className="p-2 sm:p-3 bg-blue-100 rounded-lg self-center sm:self-auto">
+                                    <Book className="w-4 sm:w-6 h-4 sm:h-6 text-blue-600" />
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card className="bg-white border-slate-200">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-600">Available</p>
-                                    <p className="text-2xl font-bold text-green-600">{availableBooks.length}</p>
+                        <CardContent className="p-3 sm:p-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                <div className="mb-2 sm:mb-0">
+                                    <p className="text-xs sm:text-sm font-medium text-slate-600">Available</p>
+                                    <p className="text-lg sm:text-2xl font-bold text-green-600">{availableBooks.length}</p>
                                 </div>
-                                <div className="p-3 bg-green-100 rounded-lg">
-                                    <CheckCircle className="w-6 h-6 text-green-600" />
+                                <div className="p-2 sm:p-3 bg-green-100 rounded-lg self-center sm:self-auto">
+                                    <CheckCircle className="w-4 sm:w-6 h-4 sm:h-6 text-green-600" />
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card className="bg-white border-slate-200">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-600">Loaned Out</p>
-                                    <p className="text-2xl font-bold text-red-600">{loanedBooks.length}</p>
+                        <CardContent className="p-3 sm:p-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                <div className="mb-2 sm:mb-0">
+                                    <p className="text-xs sm:text-sm font-medium text-slate-600">Loaned Out</p>
+                                    <p className="text-lg sm:text-2xl font-bold text-red-600">{loanedBooks.length}</p>
                                 </div>
-                                <div className="p-3 bg-red-100 rounded-lg">
-                                    <AlertCircle className="w-6 h-6 text-red-600" />
+                                <div className="p-2 sm:p-3 bg-red-100 rounded-lg self-center sm:self-auto">
+                                    <AlertCircle className="w-4 sm:w-6 h-4 sm:h-6 text-red-600" />
                                 </div>
                             </div>
                         </CardContent>
@@ -152,7 +168,7 @@ const LibraryPage: React.FC = () => {
                                     {availableBooks.length}
                                 </Badge>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {availableBooks.map((book) => (
                                     <BookCard key={book.id} book={book} />
                                 ))}
