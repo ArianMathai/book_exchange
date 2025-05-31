@@ -29,6 +29,7 @@ import { client} from "@/lib/amplifyClient.ts";
 import { fetchUserAttributes } from "aws-amplify/auth";
 import { findBookCover } from '@/services/googleBooksApi';
 
+
 // Form data interface matching your book model
 interface BookFormData {
     title: string;
@@ -50,7 +51,9 @@ type ImageSource = 'manual' | 'google_books' | null;
 
 const AddBookForm: React.FC = () => {
     const navigate = useNavigate();
-    
+
+    // User id for s3 image upload path
+
     const [formData, setFormData] = useState<BookFormData>({
         title: '',
         author: '',
@@ -73,6 +76,7 @@ const AddBookForm: React.FC = () => {
 
     // Debounce timer for Google Books API search
     const searchTimerRef = useRef<number | null>(null);
+
 
     // Effect to search for book cover when ISBN or title+author changes
     useEffect(() => {
@@ -567,11 +571,10 @@ const AddBookForm: React.FC = () => {
                                                 </div>
                                             ) : (
                                                 <FileUploader
-                                                    accessLevel="private"
                                                     acceptedFileTypes={['image/*']}
                                                     maxFileSize={5000000} // 5MB
                                                     maxFileCount={1} // Add the required maxFileCount prop
-                                                    path="bookImages/"
+                                                    path={({ identityId }) => `bookImages/${identityId}/`}
                                                     isResumable={true}
                                                     onUploadStart={() => {
                                                         setIsUploading(true);

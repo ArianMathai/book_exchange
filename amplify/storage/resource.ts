@@ -7,11 +7,11 @@ import { defineStorage } from '@aws-amplify/backend';
 export const bookStorage = defineStorage({
   name: 'BookExchangeStorage',
   access: (allow) => ({
-    // 🔐 Authenticated user can fully manage files only in their own folder
     'bookImages/{entity_id}/*': [
-        allow.authenticated.to(['read']),
-      allow.entity('identity').to(['write', 'read', 'delete']),
-    ],
+      allow.entity('identity').to(['write', 'delete', 'read']), // ✅ owner can manage
+      allow.authenticated.to(['read']),               // ✅ all logged-in users can read
 
+    ],
   }),
 });
+
