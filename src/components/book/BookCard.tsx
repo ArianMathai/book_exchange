@@ -17,7 +17,6 @@ import { BookCardProps } from "@/components/book/bookTypes.ts";
 import { getUrl } from "aws-amplify/storage";
 
 const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
-    console.log("book: ", book);
     const [imageLoading, setImageLoading] = useState(book.imageUrl ? true : false);
     const [imageError, setImageError] = useState(false);
     const [resolvedImageUrl, setResolvedImageUrl] = useState<string | null>(null);
@@ -29,7 +28,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
     // Resolve S3 URLs for manual uploads
     useEffect(() => {
         const resolveImageUrl = async () => {
-            console.log('Starting resolveImageUrl, imageUrl:', book.imageUrl, 'source:', book.imageSource);
+            //console.log('Starting resolveImageUrl, imageUrl:', book.imageUrl, 'source:', book.imageSource);
             if (!book.imageUrl) {
                 console.log('No imageUrl, setting to null');
                 setResolvedImageUrl(null);
@@ -38,17 +37,17 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
 
             try {
                 if (book.imageSource === 'google_books') {
-                    console.log('Google Books URL:', book.imageUrl);
+                    //console.log('Google Books URL:', book.imageUrl);
                     setResolvedImageUrl(book.imageUrl);
                     return;
                 }
 
                 if (book.imageSource === 'manual') {
                     setIsResolvingUrl(true);
-                    console.log('Manual source, checking if S3 key:', book.imageUrl);
+                    //console.log('Manual source, checking if S3 key:', book.imageUrl);
 
                     if (book.imageUrl.startsWith('bookImages/')) {
-                        console.log('Fetching signed URL for:', book.imageUrl);
+                        //console.log('Fetching signed URL for:', book.imageUrl);
                         try {
                             const {url} = await getUrl({
                                 path: book.imageUrl,
@@ -57,7 +56,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
                                     expiresIn: 3600
                                 }
                             });
-                            console.log('Signed URL:', url.toString());
+                            //console.log('Signed URL:', url.toString());
                             setResolvedImageUrl(url.toString());
                         } catch (error) {
                             console.error('Error getting signed URL:', error);
@@ -95,10 +94,6 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
     };
 
 
-    useEffect(() => {
-        console.log("Resimgurl ", resolvedImageUrl);
-
-    }, [resolvedImageUrl]);
 
     return (
         <Card className={cn(

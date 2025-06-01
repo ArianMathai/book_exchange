@@ -18,7 +18,11 @@ const schema = a.schema({
     loanedTo: a.string(),
     imageUrl: a.string(), // optional - stores the book cover image URL
     imageSource: a.string(), // optional - tracks how the image was obtained ('manual', 'google_books', or null)
-  }).authorization(allow => [allow.owner()]),
+  }).authorization(allow => [
+      allow.authenticated().to(['read']),
+      allow.owner().to(['read', "create", "update", "delete"]),
+  ])
+
 });
 
 // Might switch to this to allow :

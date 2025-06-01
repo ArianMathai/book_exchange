@@ -1,24 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useAuthenticator } from '@aws-amplify/ui-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { useAuthenticator } from '@aws-amplify/ui-react';
-
+import { Badge } from '@/components/ui/badge';
 import {
-    Plus,
-    Book,
-    CheckCircle,
-    AlertCircle,
+    Book as BookIcon,
     Search,
     Filter,
     Loader2,
+    HandshakeIcon,
+    CheckCircle,
+    AlertCircle,
     XCircle
 } from 'lucide-react';
 import BookCard from "@/components/book/BookCard.tsx";
-import {BookType} from "@/components/book/bookTypes.ts";
-import {client} from "@/lib/amplifyClient.ts";
+import { BookType } from "@/components/book/bookTypes.ts";
+import { client } from "@/lib/amplifyClient.ts";
 import PaginationControl from "@/components/book/PaginationControl.tsx";
 
 // Number of books to display per page
@@ -26,8 +24,7 @@ const BOOKS_PER_PAGE = 10;
 // Debounce timeout for search (milliseconds)
 const SEARCH_DEBOUNCE_MS = 300;
 
-// Main LibraryPage Page Component
-const LibraryPage: React.FC = () => {
+const FindBook: React.FC = () => {
     const { user } = useAuthenticator();
     const currentUserEmail = user?.signInDetails?.loginId || '';
 
@@ -35,13 +32,14 @@ const LibraryPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [books, setBooks] = useState<BookType[]>([]);
     const [filteredBooks, setFilteredBooks] = useState<BookType[]>([]);
-
+    
     // Book count states
-    const [totalCount, setTotalCount] = useState<number>(0);
-    const [availableCount, setAvailableCount] = useState<number>(0);
-    const [loanedCount, setLoanedCount] = useState<number>(0);
-
-    // Improved pagination state
+    const [totalBooksCount, setTotalBooksCount] = useState<number>(0);
+    const [availableBooksCount, setAvailableBooksCount] = useState<number>(0);
+    const [loanedBooksCount, setLoanedBooksCount] = useState<number>(0);
+    const [countLoading, setCountLoading] = useState(true);
+    
+    // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [paginationTokens, setPaginationTokens] = useState<(string | null)[]>([null]); // page 1 token is null
@@ -55,7 +53,6 @@ const LibraryPage: React.FC = () => {
     const [searchResults, setSearchResults] = useState<BookType[]>([]);
     const [searchLoading, setSearchLoading] = useState(false);
     const [isInSearchMode, setIsInSearchMode] = useState(false);
-    const [countLoading, setCountLoading] = useState(true);
     
     // Store previous pagination state when searching
     const [previousPaginationState, setPreviousPaginationState] = useState<{
@@ -66,11 +63,11 @@ const LibraryPage: React.FC = () => {
 
     // Calculate total pages based on total items count
     useEffect(() => {
-        if (totalCount > 0) {
-            const calculatedTotalPages = Math.ceil(totalCount / BOOKS_PER_PAGE);
+        if (totalBooksCount > 0) {
+            const calculatedTotalPages = Math.ceil(totalBooksCount / BOOKS_PER_PAGE);
             setTotalPages(calculatedTotalPages);
         }
-    }, [totalCount]);
+    }, [totalBooksCount]);
 
     // Debounce search query
     useEffect(() => {
@@ -119,26 +116,26 @@ const LibraryPage: React.FC = () => {
         }
     }, [debouncedSearchQuery]);
 
-    // Fetch only book counts for statistics
+    // Fetch only book counts for statistics (more efficient)
     const fetchBookCounts = async () => {
         if (!currentUserEmail) return;
-
+        
         setCountLoading(true);
-
+        
         try {
-            console.log('📊 Fetching book counts...');
-
+            console.log('📊 Fetching book counts from other users...');
+            
             // Fetch total count (minimal fields to reduce data transfer)
             const totalResult = await client.models.Book.list({
                 selectionSet: ['id'],
                 filter: {
                     ownerEmail: {
-                        eq: currentUserEmail
+                        ne: currentUserEmail
                     }
                 },
                 limit: 1000 // Set a high limit to get all books (for counting)
             });
-
+            
             // Fetch loaned count
             const loanedResult = await client.models.Book.list({
                 selectionSet: ['id'],
@@ -146,7 +143,7 @@ const LibraryPage: React.FC = () => {
                     and: [
                         {
                             ownerEmail: {
-                                eq: currentUserEmail
+                                ne: currentUserEmail
                             }
                         },
                         {
@@ -158,19 +155,19 @@ const LibraryPage: React.FC = () => {
                 },
                 limit: 1000 // Set a high limit to get all loaned books (for counting)
             });
-
+            
             // Calculate counts
             const total = totalResult.data?.length || 0;
             const loaned = loanedResult.data?.length || 0;
             const available = total - loaned;
-
+            
             // Update state
-            setTotalCount(total);
-            setLoanedCount(loaned);
-            setAvailableCount(available);
-
-            console.log(`📊 Counts: Total=${total}, Available=${available}, Loaned=${loaned}`);
-
+            setTotalBooksCount(total);
+            setLoanedBooksCount(loaned);
+            setAvailableBooksCount(available);
+            
+            console.log(`📊 Counts from other users: Total=${total}, Available=${available}, Loaned=${loaned}`);
+            
         } catch (error) {
             console.error('💥 Error fetching book counts:', error);
             // Don't set error state here to avoid disrupting the main view
@@ -186,7 +183,7 @@ const LibraryPage: React.FC = () => {
         setSearchLoading(true);
         
         try {
-            console.log(`🔍 Searching your library for: "${query}"`);
+            console.log(`🔍 Searching all books for: "${query}"`);
             
             // Normalize the search query
             const normalizedQuery = query.toLowerCase().trim();
@@ -201,7 +198,7 @@ const LibraryPage: React.FC = () => {
                     and: [
                         {
                             ownerEmail: {
-                                eq: currentUserEmail
+                                ne: currentUserEmail
                             }
                         },
                         {
@@ -224,10 +221,6 @@ const LibraryPage: React.FC = () => {
                             ]
                         }
                     ]
-                },
-                orderBy: {
-                    field: 'createdAt',
-                    direction: 'DESC'
                 }
             });
             
@@ -266,19 +259,22 @@ const LibraryPage: React.FC = () => {
         }
     };
 
+    // Function to fetch books from other users
     const fetchBooks = async (token: string | null = null) => {
+        if (!currentUserEmail) return;
+
         setLoading(true);
         setError(null);
 
         try {
-            console.log('📚 Calling Book.list()...');
+            console.log('📚 Fetching books from other users...');
             const result = await client.models.Book.list({
-                selectionSet: ['id','title', 'author', 'isbn', 'ownerEmail', 'createdAt', 'loanedOut', 'loanedTo', 'imageSource', 'imageUrl'],
+                selectionSet: ['id', 'title', 'author', 'isbn', 'ownerEmail', 'createdAt', 'loanedOut', 'loanedTo', 'imageSource', 'imageUrl'],
                 limit: BOOKS_PER_PAGE,
                 nextToken: token,
                 filter: {
                     ownerEmail: {
-                        eq: currentUserEmail
+                        ne: currentUserEmail
                     }
                 },
                 orderBy: {
@@ -289,13 +285,13 @@ const LibraryPage: React.FC = () => {
 
             if (result.errors && result.errors.length > 0) {
                 console.error('GraphQL Errors:', result.errors);
-                setError(`GraphQL Error: ${result.errors[0].message}`);
+                setError(`Error: ${result.errors[0].message}`);
                 return;
             }
 
             const rawBooks = result.data ?? [];
             console.log(`📚 Received ${rawBooks.length} books for page ${currentPage}`);
-            
+
             const transformedBooks: BookType[] = rawBooks.map(book => ({
                 id: book.id,
                 title: book.title,
@@ -308,12 +304,12 @@ const LibraryPage: React.FC = () => {
                 imageUrl: book.imageUrl,
                 imageSource: book.imageSource === 'manual' || book.imageSource === 'google_books'
                     ? book.imageSource
-                    : null, // Normalize to 'manual', 'google_books', or null
+                    : null,
             }));
-            
+
             setBooks(transformedBooks);
             setFilteredBooks(transformedBooks);
-
+            
             // Update pagination state for next page availability
             if (result.nextToken) {
                 setNextToken(result.nextToken);
@@ -332,7 +328,6 @@ const LibraryPage: React.FC = () => {
 
     // Initial fetch on component mount
     useEffect(() => {
-        console.log('🚀 LibraryPage mounted - fetching data');
         if (currentUserEmail) {
             fetchBookCounts();
             fetchBooks();
@@ -375,8 +370,80 @@ const LibraryPage: React.FC = () => {
         setSearchQuery('');
     };
 
-    const availableBooks = filteredBooks.filter(book => !book.loanedOut);
-    const loanedBooks = filteredBooks.filter(book => book.loanedOut);
+    // Handle loan request (UI only for now)
+    const handleLoanRequest = (bookId: string) => {
+        console.log(`Loan request for book ID: ${bookId}`);
+        // This would connect to a backend endpoint in the future
+        alert(`Loan request sent for book ID: ${bookId}`);
+    };
+
+    // Render available books
+    const renderAvailableBooks = () => {
+        const availableBooks = filteredBooks.filter(book => !book.loanedOut);
+        
+        if (availableBooks.length === 0) {
+            return (
+                <div className="text-center py-8">
+                    <p className="text-slate-600">No available books found.</p>
+                </div>
+            );
+        }
+
+        return (
+            <div>
+                <div className="flex items-center mb-6">
+                    <BookIcon className="w-5 h-5 text-green-600 mr-2" />
+                    <h2 className="text-xl font-semibold text-slate-900">Available Books</h2>
+                    <Badge variant="secondary" className="ml-3 bg-green-100 text-green-800">
+                        {availableBooks.length}
+                    </Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {availableBooks.map((book) => (
+                        <div key={book.id} className="relative">
+                            <BookCard book={book} />
+                            <div className="mt-2 flex justify-end">
+                                <Button 
+                                    onClick={() => handleLoanRequest(book.id || '')}
+                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                    size="sm"
+                                >
+                                    <HandshakeIcon className="w-4 h-4 mr-2" />
+                                    Request Loan
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+    // Render loaned books
+    const renderLoanedBooks = () => {
+        const loanedBooks = filteredBooks.filter(book => book.loanedOut);
+        
+        if (loanedBooks.length === 0) {
+            return null;
+        }
+
+        return (
+            <div>
+                <div className="flex items-center mb-6">
+                    <BookIcon className="w-5 h-5 text-red-600 mr-2" />
+                    <h2 className="text-xl font-semibold text-slate-900">Currently Loaned Books</h2>
+                    <Badge variant="secondary" className="ml-3 bg-red-100 text-red-800">
+                        {loanedBooks.length}
+                    </Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {loanedBooks.map((book) => (
+                        <BookCard key={book.id} book={book} />
+                    ))}
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50">
@@ -384,9 +451,9 @@ const LibraryPage: React.FC = () => {
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-900 mb-2">Book Library</h1>
+                        <h1 className="text-3xl font-bold text-slate-900 mb-2">Find Books</h1>
                         <p className="text-slate-600">
-                            Manage and browse your book collection
+                            Discover books from other users to borrow
                         </p>
                     </div>
 
@@ -412,12 +479,6 @@ const LibraryPage: React.FC = () => {
                         <Button variant="outline" size="sm" className="hidden sm:flex">
                             <Filter className="w-4 h-4 mr-2" />
                             Filter
-                        </Button>
-                        <Button asChild className="bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-xl transition-all duration-200">
-                            <Link to="/add-book" className="flex items-center">
-                                <Plus className="w-4 h-4 mr-2" />
-                                Add Book
-                            </Link>
                         </Button>
                     </div>
                 </div>
@@ -452,12 +513,12 @@ const LibraryPage: React.FC = () => {
                                         {countLoading ? (
                                             <Loader2 className="h-5 w-5 animate-spin text-slate-400 inline" />
                                         ) : (
-                                            totalCount
+                                            totalBooksCount
                                         )}
                                     </p>
                                 </div>
                                 <div className="p-2 sm:p-3 bg-blue-100 rounded-lg self-center sm:self-auto">
-                                    <Book className="w-4 sm:w-6 h-4 sm:h-6 text-blue-600" />
+                                    <BookIcon className="w-4 sm:w-6 h-4 sm:h-6 text-blue-600" />
                                 </div>
                             </div>
                         </CardContent>
@@ -472,7 +533,7 @@ const LibraryPage: React.FC = () => {
                                         {countLoading ? (
                                             <Loader2 className="h-5 w-5 animate-spin text-slate-400 inline" />
                                         ) : (
-                                            availableCount
+                                            availableBooksCount
                                         )}
                                     </p>
                                 </div>
@@ -492,7 +553,7 @@ const LibraryPage: React.FC = () => {
                                         {countLoading ? (
                                             <Loader2 className="h-5 w-5 animate-spin text-slate-400 inline" />
                                         ) : (
-                                            loanedCount
+                                            loanedBooksCount
                                         )}
                                     </p>
                                 </div>
@@ -524,65 +585,23 @@ const LibraryPage: React.FC = () => {
 
                 {/* Books Grid */}
                 {!loading && !pageTransitioning && !searchLoading && !error && (
-                    <div className="space-y-8">
+                    <div className="space-y-12">
                         {/* Available Books Section */}
-                        {availableBooks.length > 0 && (
-                            <div>
-                                <div className="flex items-center mb-6">
-                                    <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
-                                    <h2 className="text-xl font-semibold text-slate-900">Available Books</h2>
-                                    <Badge variant="secondary" className="ml-3 bg-green-100 text-green-800">
-                                        {availableBooks.length}
-                                    </Badge>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {availableBooks.map((book) => (
-                                        <BookCard key={book.id} book={book} />
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                        {renderAvailableBooks()}
 
                         {/* Loaned Books Section */}
-                        {loanedBooks.length > 0 && (
-                            <div>
-                                <div className="flex items-center mb-6">
-                                    <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
-                                    <h2 className="text-xl font-semibold text-slate-900">Loaned Out Books</h2>
-                                    <Badge variant="secondary" className="ml-3 bg-red-100 text-red-800">
-                                        {loanedBooks.length}
-                                    </Badge>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                    {loanedBooks.map((book) => (
-                                        <BookCard key={book.id} book={book} />
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                        {renderLoanedBooks()}
 
                         {/* Empty State */}
                         {filteredBooks.length === 0 && (
                             <div className="text-center py-12">
-                                <Book className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                                <h3 className="text-lg font-medium text-slate-900 mb-2">
-                                    {searchQuery 
-                                        ? `No books match "${searchQuery}"` 
-                                        : "No books in your library"}
-                                </h3>
+                                <BookIcon className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                                <h3 className="text-lg font-medium text-slate-900 mb-2">No books found</h3>
                                 <p className="text-slate-600 mb-6">
                                     {searchQuery 
-                                        ? "Try adjusting your search query." 
-                                        : "Get started by adding your first book to the collection."}
+                                        ? `No books match "${searchQuery}". Try a different search term.` 
+                                        : "There are no books from other users available at the moment."}
                                 </p>
-                                {!searchQuery && (
-                                    <Button asChild className="bg-red-600 hover:bg-red-700">
-                                        <Link to="/add-book">
-                                            <Plus className="w-4 h-4 mr-2" />
-                                            Add Your First Book
-                                        </Link>
-                                    </Button>
-                                )}
                             </div>
                         )}
 
@@ -606,4 +625,4 @@ const LibraryPage: React.FC = () => {
     );
 };
 
-export default LibraryPage;
+export default FindBook;
