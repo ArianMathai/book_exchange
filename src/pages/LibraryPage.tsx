@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,18 +13,16 @@ import {
     AlertCircle,
     Search,
     Filter,
-    Loader2,
-    XCircle
+    ChevronLeft,
+    ChevronRight,
+    Loader2
 } from 'lucide-react';
 import BookCard from "@/components/book/BookCard.tsx";
 import {BookType} from "@/components/book/bookTypes.ts";
 import {client} from "@/lib/amplifyClient.ts";
-import PaginationControl from "@/components/book/PaginationControl.tsx";
 
 // Number of books to display per page
 const BOOKS_PER_PAGE = 10;
-// Debounce timeout for search (milliseconds)
-const SEARCH_DEBOUNCE_MS = 300;
 
 // Main LibraryPage Page Component
 const LibraryPage: React.FC = () => {
@@ -46,78 +44,11 @@ const LibraryPage: React.FC = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [paginationTokens, setPaginationTokens] = useState<(string | null)[]>([null]); // page 1 token is null
     const [nextToken, setNextToken] = useState<string | null>(null);
-    const [pageTransitioning, setPageTransitioning] = useState(false);
-    
+
     // Search state
     const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
-    const [searchResults, setSearchResults] = useState<BookType[]>([]);
-    const [searchLoading, setSearchLoading] = useState(false);
-    const [isInSearchMode, setIsInSearchMode] = useState(false);
     const [countLoading, setCountLoading] = useState(true);
-    
-    // Store previous pagination state when searching
-    const [previousPaginationState, setPreviousPaginationState] = useState<{
-        page: number;
-        tokens: (string | null)[];
-        currentToken: string | null;
-    } | null>(null);
-
-    // Calculate total pages based on total items count
-    useEffect(() => {
-        if (totalCount > 0) {
-            const calculatedTotalPages = Math.ceil(totalCount / BOOKS_PER_PAGE);
-            setTotalPages(calculatedTotalPages);
-        }
-    }, [totalCount]);
-
-    // Debounce search query
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedSearchQuery(searchQuery);
-        }, SEARCH_DEBOUNCE_MS);
-
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [searchQuery]);
-
-    // Handle debounced search query changes
-    useEffect(() => {
-        if (debouncedSearchQuery) {
-            // Save current pagination state before searching
-            if (!isInSearchMode) {
-                setPreviousPaginationState({
-                    page: currentPage,
-                    tokens: [...paginationTokens],
-                    currentToken: nextToken
-                });
-                setIsInSearchMode(true);
-            }
-            searchBooks(debouncedSearchQuery);
-        } else if (isInSearchMode) {
-            // Clear search and restore pagination
-            setIsInSearchMode(false);
-            setSearchResults([]);
-            
-            // Restore previous pagination state
-            if (previousPaginationState) {
-                setCurrentPage(previousPaginationState.page);
-                setPaginationTokens(previousPaginationState.tokens);
-                setNextToken(previousPaginationState.currentToken);
-                
-                // Re-fetch books for the restored page
-                const tokenToUse = previousPaginationState.tokens[previousPaginationState.tokens.length - 1];
-                fetchBooks(tokenToUse);
-            } else {
-                // If no previous state, reset to first page
-                setCurrentPage(1);
-                setPaginationTokens([null]);
-                fetchBooks(null);
-            }
-        }
-    }, [debouncedSearchQuery]);
 
     // Fetch only book counts for statistics
     const fetchBookCounts = async () => {
@@ -179,93 +110,6 @@ const LibraryPage: React.FC = () => {
         }
     };
 
-    // Function to search all books globally
-    const searchBooks = async (query: string) => {
-        if (!currentUserEmail || !query.trim()) return;
-        
-        setSearchLoading(true);
-        
-        try {
-            console.log(`🔍 Searching your library for: "${query}"`);
-            
-            // Normalize the search query
-            const normalizedQuery = query.toLowerCase().trim();
-            
-            // Fetch all books that match the search query
-            // Note: In a real production app, this should be handled by a backend search endpoint
-            // to avoid fetching all books. This is a simplified implementation.
-            const result = await client.models.Book.list({
-                selectionSet: ['id', 'title', 'author', 'isbn', 'ownerEmail', 'createdAt', 'loanedOut', 'loanedTo', 'imageSource', 'imageUrl'],
-                limit: 1000, // Set a high limit to get as many books as possible
-                filter: {
-                    and: [
-                        {
-                            ownerEmail: {
-                                eq: currentUserEmail
-                            }
-                        },
-                        {
-                            or: [
-                                {
-                                    title: {
-                                        containsIgnoreCase: normalizedQuery
-                                    }
-                                },
-                                {
-                                    author: {
-                                        containsIgnoreCase: normalizedQuery
-                                    }
-                                },
-                                {
-                                    isbn: {
-                                        containsIgnoreCase: normalizedQuery
-                                    }
-                                }
-                            ]
-                        }
-                    ]
-                },
-                orderBy: {
-                    field: 'createdAt',
-                    direction: 'DESC'
-                }
-            });
-            
-            if (result.errors && result.errors.length > 0) {
-                console.error('GraphQL Errors:', result.errors);
-                setError(`Error: ${result.errors[0].message}`);
-                return;
-            }
-            
-            const rawBooks = result.data ?? [];
-            console.log(`🔍 Search found ${rawBooks.length} matching books`);
-            
-            const transformedBooks: BookType[] = rawBooks.map(book => ({
-                id: book.id,
-                title: book.title,
-                author: book.author,
-                isbn: book.isbn,
-                ownerEmail: book.ownerEmail,
-                createdAt: book.createdAt,
-                loanedOut: book.loanedOut,
-                loanedTo: book.loanedTo,
-                imageUrl: book.imageUrl,
-                imageSource: book.imageSource === 'manual' || book.imageSource === 'google_books'
-                    ? book.imageSource
-                    : null,
-            }));
-            
-            setSearchResults(transformedBooks);
-            setFilteredBooks(transformedBooks);
-            
-        } catch (error) {
-            console.error('💥 Error searching books:', error);
-            setError(error instanceof Error ? error.message : 'Unknown error');
-        } finally {
-            setSearchLoading(false);
-        }
-    };
-
     const fetchBooks = async (token: string | null = null) => {
         setLoading(true);
         setError(null);
@@ -281,10 +125,7 @@ const LibraryPage: React.FC = () => {
                         eq: currentUserEmail
                     }
                 },
-                orderBy: {
-                    field: 'createdAt',
-                    direction: 'DESC'
-                }
+
             });
 
             if (result.errors && result.errors.length > 0) {
@@ -294,8 +135,6 @@ const LibraryPage: React.FC = () => {
             }
 
             const rawBooks = result.data ?? [];
-            console.log(`📚 Received ${rawBooks.length} books for page ${currentPage}`);
-            
             const transformedBooks: BookType[] = rawBooks.map(book => ({
                 id: book.id,
                 title: book.title,
@@ -310,23 +149,30 @@ const LibraryPage: React.FC = () => {
                     ? book.imageSource
                     : null, // Normalize to 'manual', 'google_books', or null
             }));
-            
+            console.log('Transformed books:', transformedBooks);
             setBooks(transformedBooks);
             setFilteredBooks(transformedBooks);
 
             // Update pagination state for next page availability
             if (result.nextToken) {
                 setNextToken(result.nextToken);
+                // If we're fetching the first page and there's a next token,
+                // update the total pages estimate
+                if (currentPage === 1) {
+                    setTotalPages(prev => Math.max(prev, 2));
+                }
             } else {
                 setNextToken(null);
             }
+
+            // After fetching books, update the counts to keep them in sync
+            fetchBookCounts();
 
         } catch (error) {
             console.error('💥 Error fetching books:', error);
             setError(error instanceof Error ? error.message : 'Unknown error');
         } finally {
             setLoading(false);
-            setPageTransitioning(false);
         }
     };
 
@@ -339,40 +185,50 @@ const LibraryPage: React.FC = () => {
         }
     }, [currentUserEmail]);
 
-    // Handle next page - improved with better state management
+    // Handle search
+    useEffect(() => {
+        if (!searchQuery.trim()) {
+            setFilteredBooks(books);
+            return;
+        }
+
+        setIsSearching(true);
+
+        const query = searchQuery.toLowerCase().trim();
+        const filtered = books.filter(book =>
+            book.title.toLowerCase().includes(query) ||
+            book.author.toLowerCase().includes(query) ||
+            (book.isbn && book.isbn.toLowerCase().includes(query))
+        );
+
+        setFilteredBooks(filtered);
+        setIsSearching(false);
+    }, [searchQuery, books]);
+
+    // Handle next page - simplified with paginationTokens array
     const handleNextPage = async () => {
         if (nextToken) {
-            setPageTransitioning(true);
-            
             // Add the next token to our pagination tokens array
             setPaginationTokens(prev => [...prev, nextToken]);
             setCurrentPage(prev => prev + 1);
-            
             await fetchBooks(nextToken);
         }
     };
 
-    // Handle previous page - improved with better state management
-    const handlePrevPage = async () => {
+    // Handle previous page - simplified with paginationTokens array
+    const handlePrevPage = () => {
         if (currentPage > 1) {
-            setPageTransitioning(true);
-            
             // Remove the current token from the array
             const newTokens = [...paginationTokens];
             newTokens.pop(); // Remove the current page's token
             setPaginationTokens(newTokens);
-            
+
             // Get the previous page's token (now the last one in the array)
             const prevToken = newTokens[newTokens.length - 1];
-            
-            setCurrentPage(prev => prev - 1);
-            await fetchBooks(prevToken);
-        }
-    };
 
-    // Clear search
-    const handleClearSearch = () => {
-        setSearchQuery('');
+            setCurrentPage(prev => prev - 1);
+            fetchBooks(prevToken);
+        }
     };
 
     const availableBooks = filteredBooks.filter(book => !book.loanedOut);
@@ -396,18 +252,10 @@ const LibraryPage: React.FC = () => {
                             <Input
                                 type="text"
                                 placeholder="Search by title, author, or ISBN..."
-                                className="pl-9 pr-10 py-2 w-full sm:w-64"
+                                className="pl-9 pr-4 py-2 w-full sm:w-64"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
-                            {searchQuery && (
-                                <button 
-                                    className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
-                                    onClick={handleClearSearch}
-                                >
-                                    <XCircle className="h-4 w-4" />
-                                </button>
-                            )}
                         </div>
                         <Button variant="outline" size="sm" className="hidden sm:flex">
                             <Filter className="w-4 h-4 mr-2" />
@@ -421,25 +269,6 @@ const LibraryPage: React.FC = () => {
                         </Button>
                     </div>
                 </div>
-
-                {/* Search Status Indicator */}
-                {isInSearchMode && (
-                    <div className="mb-4 p-2 bg-blue-50 border border-blue-100 rounded-md">
-                        <p className="text-sm text-blue-700 flex items-center">
-                            <Search className="h-4 w-4 mr-2" />
-                            {searchLoading ? (
-                                <>
-                                    <Loader2 className="h-3 w-3 mr-2 animate-spin" />
-                                    Searching for "{searchQuery}"...
-                                </>
-                            ) : (
-                                <>
-                                    Showing {searchResults.length} results for "{searchQuery}"
-                                </>
-                            )}
-                        </p>
-                    </div>
-                )}
 
                 {/* Statistics Cards */}
                 <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8">
@@ -505,12 +334,10 @@ const LibraryPage: React.FC = () => {
                 </div>
 
                 {/* Loading State */}
-                {(loading || pageTransitioning || searchLoading) && (
+                {loading && (
                     <div className="flex justify-center items-center py-12">
                         <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-                        <span className="ml-3 text-slate-600">
-                            {searchLoading ? 'Searching books...' : 'Loading books...'}
-                        </span>
+                        <span className="ml-3 text-slate-600">Loading books...</span>
                     </div>
                 )}
 
@@ -523,7 +350,7 @@ const LibraryPage: React.FC = () => {
                 )}
 
                 {/* Books Grid */}
-                {!loading && !pageTransitioning && !searchLoading && !error && (
+                {!loading && !error && (
                     <div className="space-y-8">
                         {/* Available Books Section */}
                         {availableBooks.length > 0 && (
@@ -562,41 +389,55 @@ const LibraryPage: React.FC = () => {
                         )}
 
                         {/* Empty State */}
-                        {filteredBooks.length === 0 && (
+                        {books.length === 0 && !isSearching && (
                             <div className="text-center py-12">
                                 <Book className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                                <h3 className="text-lg font-medium text-slate-900 mb-2">
-                                    {searchQuery 
-                                        ? `No books match "${searchQuery}"` 
-                                        : "No books in your library"}
-                                </h3>
-                                <p className="text-slate-600 mb-6">
-                                    {searchQuery 
-                                        ? "Try adjusting your search query." 
-                                        : "Get started by adding your first book to the collection."}
-                                </p>
-                                {!searchQuery && (
-                                    <Button asChild className="bg-red-600 hover:bg-red-700">
-                                        <Link to="/add-book">
-                                            <Plus className="w-4 h-4 mr-2" />
-                                            Add Your First Book
-                                        </Link>
-                                    </Button>
-                                )}
+                                <h3 className="text-lg font-medium text-slate-900 mb-2">No books in your library</h3>
+                                <p className="text-slate-600 mb-6">Get started by adding your first book to the collection.</p>
+                                <Button asChild className="bg-red-600 hover:bg-red-700">
+                                    <Link to="/add-book">
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Add Your First Book
+                                    </Link>
+                                </Button>
                             </div>
                         )}
 
-                        {/* Pagination Controls - Only show when not in search mode */}
-                        {filteredBooks.length > 0 && !isInSearchMode && (
-                            <div className="pt-6 border-t border-slate-200">
-                                <PaginationControl
-                                    currentPage={currentPage}
-                                    onPreviousPage={handlePrevPage}
-                                    onNextPage={handleNextPage}
-                                    hasNextPage={!!nextToken}
-                                    totalPages={totalPages}
-                                    className="mt-4"
-                                />
+                        {/* No Search Results */}
+                        {filteredBooks.length === 0 && searchQuery.trim() !== '' && (
+                            <div className="text-center py-12">
+                                <Search className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                                <h3 className="text-lg font-medium text-slate-900 mb-2">No matching books found</h3>
+                                <p className="text-slate-600 mb-6">Try adjusting your search query.</p>
+                            </div>
+                        )}
+
+                        {/* Pagination Controls */}
+                        {filteredBooks.length > 0 && (
+                            <div className="flex justify-between items-center pt-6 border-t border-slate-200">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handlePrevPage}
+                                    disabled={currentPage === 1}
+                                >
+                                    <ChevronLeft className="h-4 w-4 mr-2" />
+                                    Previous
+                                </Button>
+
+                                <span className="text-sm text-slate-600">
+                                    Page {currentPage} {totalPages > 1 && `of ${totalPages}`}
+                                </span>
+
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleNextPage}
+                                    disabled={!nextToken}
+                                >
+                                    Next
+                                    <ChevronRight className="h-4 w-4 ml-2" />
+                                </Button>
                             </div>
                         )}
                     </div>
