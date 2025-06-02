@@ -28,6 +28,8 @@ import { cn } from '@/lib/utils.ts';
 import { client} from "@/lib/amplifyClient.ts";
 import { fetchUserAttributes } from "aws-amplify/auth";
 import { findBookCover } from '@/services/googleBooksApi';
+import {getCurrentLocation} from "@/services/getCurrentLocation.ts";
+import {addBookToIndex} from "@/services/addBookToIndex.ts";
 
 
 // Form data interface matching your book model
@@ -209,7 +211,7 @@ const AddBookForm: React.FC = () => {
     };
 
 
-    // Handle form submission
+// Handle form submission
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -237,7 +239,7 @@ const AddBookForm: React.FC = () => {
 
             // Prepare image data
             let imageUrl = null;
-            
+
             try {
                 if (imageSource === 'manual' && uploadedS3Key) {
                     // For manual uploads, use the S3 key from the FileUploader
@@ -248,14 +250,14 @@ const AddBookForm: React.FC = () => {
                 }
             } catch (error) {
                 console.error('Error processing image:', error);
-                setErrors(prev => ({ 
-                    ...prev, 
-                    image: error instanceof Error ? error.message : 'Failed to process image' 
+                setErrors(prev => ({
+                    ...prev,
+                    image: error instanceof Error ? error.message : 'Failed to process image'
                 }));
                 setIsSubmitting(false);
                 return;
             }
-            
+
             // Use the existing createBook helper and then pass to AddBook
             const bookData = {
                 title: formData.title.trim(),
@@ -270,11 +272,42 @@ const AddBookForm: React.FC = () => {
                 imageSource: imageSource
             };
 
-            console.log("Bookdata: " ,bookData);
+            console.log("Bookdata: ", bookData);
 
+            // Create book in document database
             const res = await client.models.Book.create(bookData);
+            console.log("Bookdata res: ", res);
 
-            console.log("Bookdata res : ", res)
+            // Check if book creation was successful
+            if (!res.data?.id) {
+                throw new Error('Book creation failed - no ID returned');
+            }
+
+            // After successful creation, add to index database
+            try {
+                // Optional: Get user's location for the index
+                const coordinates = await getCurrentLocation();
+
+                // Add book to the index database using the same ID
+                await addBookToIndex({
+                    id: res.data.id, // Now TypeScript knows this exists
+                    title: bookData.title,
+                    author: bookData.author,
+                    isbn: bookData.isbn
+                }, coordinates);
+
+                console.log('✅ Book successfully added to both databases');
+            } catch (indexError) {
+                // Log the error but don't fail the entire operation
+                // The book was successfully created in the main database
+                console.warn('⚠️ Book created in main database but failed to add to index:', indexError);
+
+                // Optionally show a warning to the user
+                setErrors(prev => ({
+                    ...prev,
+                    index: 'Book saved but may not appear in public search immediately'
+                }));
+            }
 
             setSubmitSuccess(true);
 
@@ -285,9 +318,9 @@ const AddBookForm: React.FC = () => {
 
         } catch (error) {
             console.error('Error creating book:', error);
-            setErrors(prev => ({ 
-                ...prev, 
-                owner: 'Failed to save book. Please try again.' 
+            setErrors(prev => ({
+                ...prev,
+                owner: 'Failed to save book. Please try again.'
             }));
         } finally {
             setIsSubmitting(false);
