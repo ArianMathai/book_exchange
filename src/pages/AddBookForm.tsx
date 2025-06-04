@@ -46,6 +46,8 @@ interface FormErrors {
 // Image source type
 type ImageSource = 'manual' | 'google_books' | null;
 
+//TODO: Possibly remove search book cover function, as search book by title also returns the cover? Explore this
+
 const AddBookForm: React.FC = () => {
     const navigate = useNavigate();
 
