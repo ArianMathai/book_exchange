@@ -22,15 +22,16 @@ import {
     Search,
     X,
     RefreshCw,
-    Upload
+    Upload,
+    ChevronDown,
+    Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils.ts';
 import { client} from "@/lib/amplifyClient.ts";
 import { fetchUserAttributes } from "aws-amplify/auth";
-import { findBookCover } from '@/services/googleBooksApi';
+import { findBookCover, searchCombinedSuggestions, BookSuggestion } from '@/services/googleBooksApi';
 import {getCurrentLocation} from "@/services/getCurrentLocation.ts";
 import {addBookToIndex} from "@/services/addBookToIndex.ts";
-
 
 // Form data interface matching your book model
 interface BookFormData {
@@ -54,8 +55,6 @@ type ImageSource = 'manual' | 'google_books' | null;
 const AddBookForm: React.FC = () => {
     const navigate = useNavigate();
 
-    // User id for s3 image upload path
-
     const [formData, setFormData] = useState<BookFormData>({
         title: '',
         author: '',
@@ -67,7 +66,7 @@ const AddBookForm: React.FC = () => {
     const [imageSource, setImageSource] = useState<ImageSource>(null);
     const [isSearchingImage, setIsSearchingImage] = useState(false);
     const [activeTab, setActiveTab] = useState<string>("google");
-    
+
     // FileUploader state
     const [uploadedS3Key, setUploadedS3Key] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -79,6 +78,18 @@ const AddBookForm: React.FC = () => {
     // Debounce timer for Google Books API search
     const searchTimerRef = useRef<number | null>(null);
 
+    // Autocomplete/suggestions state
+    const [suggestions, setSuggestions] = useState<BookSuggestion[]>([]);
+    const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+    const [activeSuggestionField, setActiveSuggestionField] = useState<'title' | 'author' | null>(null);
+
+    // Refs for suggestion handling
+    const suggestionTimerRef = useRef<number | null>(null);
+    const suggestionContainerRef = useRef<HTMLDivElement>(null);
+    const titleInputRef = useRef<HTMLInputElement>(null);
+    const authorInputRef = useRef<HTMLInputElement>(null);
 
     // Effect to search for book cover when ISBN or title+author changes
     useEffect(() => {
@@ -91,11 +102,11 @@ const AddBookForm: React.FC = () => {
         if (imageSource === 'manual') return;
 
         const { isbn, title, author } = formData;
-        
+
         // Only search if we have ISBN or both title and author
         if ((isbn && isbn.length >= 10) || (title.length > 2 && author.length > 2)) {
             setIsSearchingImage(true);
-            
+
             // Set a debounce timer to avoid too many API calls
             searchTimerRef.current = window.setTimeout(async () => {
                 await searchBookImage();
@@ -109,20 +120,68 @@ const AddBookForm: React.FC = () => {
         };
     }, [formData.isbn, formData.title, formData.author]);
 
+    // Effect to handle suggestions when title or author changes
+    useEffect(() => {
+        // Clear any existing timer
+        if (suggestionTimerRef.current) {
+            window.clearTimeout(suggestionTimerRef.current);
+        }
+
+        const { title, author } = formData;
+
+        // Only search if we have meaningful input and suggestions are active
+        if ((title.length >= 2 || author.length >= 2) && activeSuggestionField) {
+            setIsLoadingSuggestions(true);
+
+            // Set a debounce timer to avoid too many API calls
+            suggestionTimerRef.current = window.setTimeout(async () => {
+                await searchSuggestions();
+            }, 300);
+        } else {
+            setSuggestions([]);
+            setShowSuggestions(false);
+        }
+
+        return () => {
+            if (suggestionTimerRef.current) {
+                window.clearTimeout(suggestionTimerRef.current);
+            }
+        };
+    }, [formData.title, formData.author, activeSuggestionField]);
+
+    // Function to search for book suggestions
+    const searchSuggestions = async () => {
+        try {
+            setIsLoadingSuggestions(true);
+            const { title, author } = formData;
+
+            const results = await searchCombinedSuggestions(title, author, 8);
+            setSuggestions(results);
+            setShowSuggestions(results.length > 0);
+            setSelectedSuggestionIndex(-1);
+        } catch (error) {
+            console.error('Error searching for suggestions:', error);
+            setSuggestions([]);
+            setShowSuggestions(false);
+        } finally {
+            setIsLoadingSuggestions(false);
+        }
+    };
+
     // Function to search for book image using Google Books API
     const searchBookImage = async () => {
         try {
             setIsSearchingImage(true);
             const { isbn, title, author } = formData;
-            
+
             // Only search if we have ISBN or both title and author
             if (!isbn && (!title || !author)) {
                 setIsSearchingImage(false);
                 return;
             }
-            
+
             const coverUrl = await findBookCover(isbn, title, author);
-            
+
             if (coverUrl) {
                 setGoogleBooksImage(coverUrl);
                 setImageSource('google_books');
@@ -140,12 +199,89 @@ const AddBookForm: React.FC = () => {
         }
     };
 
+    // Handle suggestion selection
+    const handleSuggestionSelect = (suggestion: BookSuggestion) => {
+        setFormData(prev => ({
+            ...prev,
+            title: suggestion.title,
+            author: suggestion.author,
+            isbn: suggestion.isbn || ''
+        }));
+
+        // If suggestion has a cover image, use it
+        if (suggestion.coverUrl) {
+            setGoogleBooksImage(suggestion.coverUrl);
+            setImageSource('google_books');
+        }
+
+        // Hide suggestions
+        setShowSuggestions(false);
+        setActiveSuggestionField(null);
+        setSuggestions([]);
+
+        // Clear any errors
+        setErrors(prev => ({
+            ...prev,
+            title: undefined,
+            author: undefined,
+            isbn: undefined
+        }));
+    };
+
+    // Handle keyboard navigation for suggestions
+    const handleSuggestionKeyDown = (e: React.KeyboardEvent) => {
+        if (!showSuggestions || suggestions.length === 0) return;
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                setSelectedSuggestionIndex(prev =>
+                    prev < suggestions.length - 1 ? prev + 1 : 0
+                );
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setSelectedSuggestionIndex(prev =>
+                    prev > 0 ? prev - 1 : suggestions.length - 1
+                );
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (selectedSuggestionIndex >= 0) {
+                    handleSuggestionSelect(suggestions[selectedSuggestionIndex]);
+                }
+                break;
+            case 'Escape':
+                setShowSuggestions(false);
+                setActiveSuggestionField(null);
+                setSelectedSuggestionIndex(-1);
+                break;
+        }
+    };
+
+    // Handle input focus
+    const handleInputFocus = (field: 'title' | 'author') => {
+        setActiveSuggestionField(field);
+        if (suggestions.length > 0) {
+            setShowSuggestions(true);
+        }
+    };
+
+    // Handle input blur (with delay to allow for suggestion clicks)
+    const handleInputBlur = () => {
+        setTimeout(() => {
+            setShowSuggestions(false);
+            setActiveSuggestionField(null);
+            setSelectedSuggestionIndex(-1);
+        }, 150);
+    };
+
     // Clear selected image
     const clearImage = () => {
         setUploadedS3Key(null);
         setGoogleBooksImage(null);
         setImageSource(null);
-        
+
         // Clear any image errors
         if (errors.image) {
             setErrors(prev => ({ ...prev, image: undefined }));
@@ -190,7 +326,7 @@ const AddBookForm: React.FC = () => {
     // Handle tab change
     const handleTabChange = (value: string) => {
         setActiveTab(value);
-        
+
         if (value === 'google') {
             // Switch to Google Books image if available
             if (googleBooksImage) {
@@ -210,8 +346,7 @@ const AddBookForm: React.FC = () => {
         }
     };
 
-
-// Handle form submission
+    // Handle form submission
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -290,7 +425,7 @@ const AddBookForm: React.FC = () => {
 
                 // Add book to the index database using the same ID
                 await addBookToIndex({
-                    id: res.data.id, // Now TypeScript knows this exists
+                    id: res.data.id,
                     title: bookData.title,
                     author: bookData.author,
                     isbn: bookData.isbn
@@ -397,26 +532,37 @@ const AddBookForm: React.FC = () => {
 
                     <CardContent className="p-6">
                         <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* Title Field */}
-                            <div className="space-y-2">
+                            {/* Title Field with Autocomplete */}
+                            <div className="space-y-2 relative">
                                 <Label htmlFor="title" className="text-sm font-medium text-slate-700 flex items-center">
                                     <BookOpen className="w-4 h-4 mr-1.5 text-slate-500" />
                                     Book Title *
                                 </Label>
-                                <Input
-                                    id="title"
-                                    type="text"
-                                    placeholder="Enter the book title"
-                                    value={formData.title}
-                                    autoFocus={true}
-                                    onChange={(e) => handleInputChange('title', e.target.value)}
-                                    className={cn(
-                                        "transition-colors duration-200",
-                                        errors.title
-                                            ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                                            : "border-slate-300 focus:border-red-500 focus:ring-red-500"
+                                <div className="relative">
+                                    <Input
+                                        ref={titleInputRef}
+                                        id="title"
+                                        type="text"
+                                        placeholder="Enter the book title"
+                                        value={formData.title}
+                                        autoFocus={true}
+                                        onChange={(e) => handleInputChange('title', e.target.value)}
+                                        onFocus={() => handleInputFocus('title')}
+                                        onBlur={handleInputBlur}
+                                        onKeyDown={handleSuggestionKeyDown}
+                                        className={cn(
+                                            "transition-colors duration-200",
+                                            errors.title
+                                                ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                                                : "border-slate-300 focus:border-red-500 focus:ring-red-500"
+                                        )}
+                                    />
+                                    {(isLoadingSuggestions && activeSuggestionField === 'title') && (
+                                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                            <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                                        </div>
                                     )}
-                                />
+                                </div>
                                 {errors.title && (
                                     <div className="flex items-center text-sm text-red-600 mt-1">
                                         <AlertCircle className="w-4 h-4 mr-1" />
@@ -425,25 +571,36 @@ const AddBookForm: React.FC = () => {
                                 )}
                             </div>
 
-                            {/* Author Field */}
-                            <div className="space-y-2">
+                            {/* Author Field with Autocomplete */}
+                            <div className="space-y-2 relative">
                                 <Label htmlFor="author" className="text-sm font-medium text-slate-700 flex items-center">
                                     <User className="w-4 h-4 mr-1.5 text-slate-500" />
                                     Author *
                                 </Label>
-                                <Input
-                                    id="author"
-                                    type="text"
-                                    placeholder="Enter the author's name"
-                                    value={formData.author}
-                                    onChange={(e) => handleInputChange('author', e.target.value)}
-                                    className={cn(
-                                        "transition-colors duration-200",
-                                        errors.author
-                                            ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                                            : "border-slate-300 focus:border-red-500 focus:ring-red-500"
+                                <div className="relative">
+                                    <Input
+                                        ref={authorInputRef}
+                                        id="author"
+                                        type="text"
+                                        placeholder="Enter the author's name"
+                                        value={formData.author}
+                                        onChange={(e) => handleInputChange('author', e.target.value)}
+                                        onFocus={() => handleInputFocus('author')}
+                                        onBlur={handleInputBlur}
+                                        onKeyDown={handleSuggestionKeyDown}
+                                        className={cn(
+                                            "transition-colors duration-200",
+                                            errors.author
+                                                ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                                                : "border-slate-300 focus:border-red-500 focus:ring-red-500"
+                                        )}
+                                    />
+                                    {(isLoadingSuggestions && activeSuggestionField === 'author') && (
+                                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                            <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                                        </div>
                                     )}
-                                />
+                                </div>
                                 {errors.author && (
                                     <div className="flex items-center text-sm text-red-600 mt-1">
                                         <AlertCircle className="w-4 h-4 mr-1" />
@@ -451,6 +608,82 @@ const AddBookForm: React.FC = () => {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Suggestions Dropdown */}
+                            {showSuggestions && suggestions.length > 0 && (
+                                <div
+                                    ref={suggestionContainerRef}
+                                    className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+                                    style={{
+                                        top: activeSuggestionField === 'title' ? '140px' : '220px',
+                                        left: '0',
+                                        right: '0'
+                                    }}
+                                >
+                                    <div className="p-2">
+                                        <div className="flex items-center justify-between mb-2 px-2">
+                                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                                                Book Suggestions
+                                            </span>
+                                            <Badge variant="secondary" className="text-xs">
+                                                {suggestions.length} found
+                                            </Badge>
+                                        </div>
+                                        {suggestions.map((suggestion, index) => (
+                                            <div
+                                                key={suggestion.id}
+                                                onClick={() => handleSuggestionSelect(suggestion)}
+                                                className={cn(
+                                                    "flex items-start space-x-3 p-3 rounded-lg cursor-pointer transition-colors",
+                                                    selectedSuggestionIndex === index
+                                                        ? "bg-red-50 border border-red-200"
+                                                        : "hover:bg-slate-50"
+                                                )}
+                                            >
+                                                {/* Book Cover Thumbnail */}
+                                                <div className="flex-shrink-0 w-12 h-16 bg-slate-100 rounded border overflow-hidden">
+                                                    {suggestion.coverUrl ? (
+                                                        <img
+                                                            src={suggestion.coverUrl}
+                                                            alt="Book cover"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center">
+                                                            <BookOpen className="w-4 h-4 text-slate-400" />
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Book Details */}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium text-slate-900 truncate">
+                                                        {suggestion.title}
+                                                    </div>
+                                                    <div className="text-sm text-slate-600 truncate">
+                                                        by {suggestion.author}
+                                                    </div>
+                                                    <div className="flex items-center space-x-2 mt-1">
+                                                        {suggestion.isbn && (
+                                                            <Badge variant="outline" className="text-xs font-mono">
+                                                                {suggestion.isbn}
+                                                            </Badge>
+                                                        )}
+                                                        {suggestion.publishedDate && (
+                                                            <span className="text-xs text-slate-500 flex items-center">
+                                                                <Clock className="w-3 h-3 mr-1" />
+                                                                {suggestion.publishedDate.split('-')[0]}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <ChevronDown className="w-4 h-4 text-slate-400 transform rotate-[-90deg]" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* ISBN Field */}
                             <div className="space-y-2">
@@ -491,12 +724,12 @@ const AddBookForm: React.FC = () => {
                                         Book Cover
                                         <Badge variant="secondary" className="ml-2 text-xs">Optional</Badge>
                                     </Label>
-                                    
+
                                     {(imageSource || isSearchingImage) && (
-                                        <Button 
-                                            type="button" 
-                                            variant="ghost" 
-                                            size="sm" 
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
                                             onClick={clearImage}
                                             className="h-8 px-2 text-slate-500"
                                         >
@@ -505,7 +738,7 @@ const AddBookForm: React.FC = () => {
                                         </Button>
                                     )}
                                 </div>
-                                
+
                                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                                     <TabsList className="grid w-full grid-cols-2 mb-4">
                                         <TabsTrigger value="google" className="flex items-center">
@@ -517,23 +750,22 @@ const AddBookForm: React.FC = () => {
                                             Upload Photo
                                         </TabsTrigger>
                                     </TabsList>
-                                    
+
                                     {/* Google Books Cover Tab */}
                                     <TabsContent value="google" className="space-y-4">
                                         <div className="flex items-center justify-between">
                                             <p className="text-sm text-slate-600">
-                                                {isSearchingImage 
-                                                    ? "Searching for book cover..." 
-                                                    : googleBooksImage 
-                                                        ? "Cover found!" 
+                                                {isSearchingImage
+                                                    ? "Searching for book cover..."
+                                                    : googleBooksImage
+                                                        ? "Cover found!"
                                                         : "Enter ISBN or title and author to find cover"}
                                             </p>
-                                            
                                             {!isSearchingImage && formData.title && formData.author && (
-                                                <Button 
-                                                    type="button" 
-                                                    variant="outline" 
-                                                    size="sm" 
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
                                                     onClick={searchBookImage}
                                                     className="h-8"
                                                 >
@@ -542,7 +774,7 @@ const AddBookForm: React.FC = () => {
                                                 </Button>
                                             )}
                                         </div>
-                                        
+
                                         <div className="border border-slate-200 rounded-lg p-4 flex items-center justify-center bg-slate-50 min-h-[200px]">
                                             {isSearchingImage ? (
                                                 <div className="flex flex-col items-center justify-center text-slate-400">
@@ -551,10 +783,10 @@ const AddBookForm: React.FC = () => {
                                                 </div>
                                             ) : googleBooksImage ? (
                                                 <div className="relative">
-                                                    <img 
-                                                        src={googleBooksImage} 
-                                                        alt="Book cover" 
-                                                        className="max-h-[200px] rounded shadow-md" 
+                                                    <img
+                                                        src={googleBooksImage}
+                                                        alt="Book cover"
+                                                        className="max-h-[200px] rounded shadow-md"
                                                     />
                                                     <Badge className="absolute top-2 right-2 bg-blue-100 text-blue-800">
                                                         <Search className="w-3 h-3 mr-1" />
@@ -565,15 +797,15 @@ const AddBookForm: React.FC = () => {
                                                 <div className="flex flex-col items-center justify-center text-slate-400">
                                                     <Search className="w-8 h-8 mb-2" />
                                                     <span className="text-sm text-center">
-                                                        {formData.title && formData.author 
-                                                            ? "No cover found. Try entering an ISBN number." 
+                                                        {formData.title && formData.author
+                                                            ? "No cover found. Try entering an ISBN number."
                                                             : "Enter book details to search for cover"}
                                                     </span>
                                                 </div>
                                             )}
                                         </div>
                                     </TabsContent>
-                                    
+
                                     {/* Manual Upload Tab with FileUploader */}
                                     <TabsContent value="manual" className="space-y-4">
                                         <div className="flex items-center justify-between">
@@ -581,7 +813,7 @@ const AddBookForm: React.FC = () => {
                                                 Upload a photo of your book cover
                                             </p>
                                         </div>
-                                        
+
                                         <div className="border border-slate-200 rounded-lg p-4 flex flex-col items-center justify-center bg-slate-50 min-h-[200px]">
                                             {uploadedS3Key ? (
                                                 <div className="relative flex flex-col items-center">
@@ -593,9 +825,9 @@ const AddBookForm: React.FC = () => {
                                                         <Camera className="w-3 h-3 mr-1" />
                                                         Your Photo
                                                     </Badge>
-                                                    <Button 
-                                                        type="button" 
-                                                        variant="outline" 
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
                                                         size="sm"
                                                         onClick={clearImage}
                                                     >
@@ -623,16 +855,16 @@ const AddBookForm: React.FC = () => {
                                                         if (data.key) {
                                                             setUploadedS3Key(data.key);
                                                         } else {
-                                                            setErrors(prev => ({ 
-                                                                ...prev, 
-                                                                image: 'Failed to upload image: No file key returned' 
+                                                            setErrors(prev => ({
+                                                                ...prev,
+                                                                image: 'Failed to upload image: No file key returned'
                                                             }));
                                                         }
                                                     }}
                                                     onUploadError={(error) => {
                                                         setIsUploading(false);
-                                                        setErrors(prev => ({ 
-                                                            ...prev, 
+                                                        setErrors(prev => ({
+                                                            ...prev,
                                                             image: 'Failed to upload image: ' + error
                                                         }));
                                                     }}
@@ -655,9 +887,9 @@ const AddBookForm: React.FC = () => {
                                                                 <p className="text-sm text-slate-500 mb-4 text-center">
                                                                     Drag and drop a photo here, or click to select
                                                                 </p>
-                                                                <Button 
-                                                                    type="button" 
-                                                                    variant="outline" 
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="outline"
                                                                     onClick={props.onClick}
                                                                 >
                                                                     <Upload className="w-4 h-4 mr-2" />
@@ -670,14 +902,14 @@ const AddBookForm: React.FC = () => {
                                                 />
                                             )}
                                         </div>
-                                        
+
                                         {errors.image && (
                                             <div className="flex items-center text-sm text-red-600 mt-1">
                                                 <AlertCircle className="w-4 h-4 mr-1" />
                                                 {errors.image}
                                             </div>
                                         )}
-                                        
+
                                         <p className="text-xs text-slate-500">
                                             Accepted formats: JPEG, PNG, WebP, GIF. Max size: 5MB.
                                         </p>
@@ -716,7 +948,7 @@ const AddBookForm: React.FC = () => {
                                     )}
                                 </Button>
                             </div>
-                            
+
                             {errors.owner && (
                                 <div className="flex items-center text-sm text-red-600 mt-4 p-3 bg-red-50 rounded-md border border-red-100">
                                     <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />
@@ -751,3 +983,4 @@ const AddBookForm: React.FC = () => {
 };
 
 export default AddBookForm;
+
