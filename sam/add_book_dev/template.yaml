@@ -22,7 +22,7 @@ Resources:
   AddBookApi:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: Prod
+      StageName: Dev
       Cors:
         AllowMethods: "'POST,OPTIONS'"
         AllowHeaders: "'Content-Type,Authorization'"
@@ -74,8 +74,8 @@ Resources:
 
 Outputs:
   AddBookApi:
-    Description: API Gateway endpoint URL for Prod stage for Add Book function
-    Value: !Sub "https://${AddBookApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/books/"
+    Description: API Gateway endpoint URL for Dev stage for Add Book function
+    Value: !Sub "https://${AddBookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/books/"
   AddBookFunction:
     Description: Add Book Lambda Function ARN
     Value: !GetAtt AddBookFunction.Arn

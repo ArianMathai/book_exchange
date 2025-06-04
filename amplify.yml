@@ -9,6 +9,7 @@ frontend:
   phases:
     build:
       commands:
+        - echo "VITE_ADD_BOOK_ENDPOINT=$VITE_ADD_BOOK_ENDPOINT" >> .env
         - npm run build
   artifacts:
     baseDirectory: dist

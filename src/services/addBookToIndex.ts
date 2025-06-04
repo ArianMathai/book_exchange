@@ -28,6 +28,8 @@ interface IndexResponse {
     data?: IndexedBook;
 }
 
+const endpoint = import.meta.env.VITE_ADD_BOOK_ENDPOINT;
+
 // Function to add book to the index database via Lambda
 export const addBookToIndex = async (
     bookData: BookData,
@@ -57,7 +59,7 @@ export const addBookToIndex = async (
         console.log('📤 Sending book to index:', payload);
 
         // Call the Lambda endpoint
-        const response = await fetch('https://35cw6i8alf.execute-api.eu-north-1.amazonaws.com/Prod/books', {
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

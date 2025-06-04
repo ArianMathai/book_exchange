@@ -3,7 +3,7 @@
 version = 0.1
 
 [default.global.parameters]
-stack_name = "addbook"
+stack_name = "add-book-prod"
 
 [default.build.parameters]
 cached = true
@@ -16,9 +16,9 @@ lint = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
-s3_prefix = "addbook"
+s3_prefix = "add-book-prod"
 region = "eu-north-1"
-parameter_overrides = "CognitoUserPoolId=\"eu-north-1_Cpr2QkIBI\""
+parameter_overrides = "CognitoUserPoolId=\"eu-north-1_ncYQOqnAD\""
 image_repositories = []
 
 [default.package.parameters]
