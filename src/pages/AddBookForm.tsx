@@ -6,25 +6,14 @@ import { Label } from '@/components/ui/label.tsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileUploader } from '@aws-amplify/ui-react-storage';
 import {
     BookOpen,
     User,
     Hash,
     Save,
     ArrowLeft,
-    CheckCircle,
     AlertCircle,
     Loader2,
-    Image as ImageIcon,
-    Camera,
-    Search,
-    X,
-    RefreshCw,
-    Upload,
-    ChevronDown,
-    Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils.ts';
 import { client} from "@/lib/amplifyClient.ts";
@@ -32,6 +21,11 @@ import { fetchUserAttributes } from "aws-amplify/auth";
 import { findBookCover, searchCombinedSuggestions, BookSuggestion } from '@/services/googleBooksApi';
 import {getCurrentLocation} from "@/services/getCurrentLocation.ts";
 import {addBookToIndex} from "@/services/addBookToIndex.ts";
+import SuccessMessage from "@/components/add-book-form/SuccessMessage.tsx";
+import FormInputField from "@/components/add-book-form/FormInputField.tsx";
+import BookSuggestionsDropdown from "@/components/add-book-form/BookSuggestionsDropdown.tsx";
+import ImageTabSwitcher from "@/components/add-book-form/ImageTabSwitcher.tsx";
+import HelpCard from "@/components/add-book-form/HelpCard.tsx";
 
 // Form data interface matching your book model
 interface BookFormData {
@@ -65,7 +59,7 @@ const AddBookForm: React.FC = () => {
     const [googleBooksImage, setGoogleBooksImage] = useState<string | null>(null);
     const [imageSource, setImageSource] = useState<ImageSource>(null);
     const [isSearchingImage, setIsSearchingImage] = useState(false);
-    const [activeTab, setActiveTab] = useState<string>("google");
+    const [activeTab, setActiveTab] = useState<'google' | 'manual'>('google');
 
     // FileUploader state
     const [uploadedS3Key, setUploadedS3Key] = useState<string | null>(null);
@@ -155,7 +149,7 @@ const AddBookForm: React.FC = () => {
             setIsLoadingSuggestions(true);
             const { title, author } = formData;
 
-            const results = await searchCombinedSuggestions(title, author, 8);
+            const results = await searchCombinedSuggestions(title, author, 8); // change maxResults to get more book suggestions (limit is 40)
             setSuggestions(results);
             setShowSuggestions(results.length > 0);
             setSelectedSuggestionIndex(-1);
@@ -317,14 +311,18 @@ const AddBookForm: React.FC = () => {
     const handleInputChange = (field: keyof BookFormData, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
 
-        // Clear error for this field when user starts typing
         if (errors[field]) {
             setErrors(prev => ({ ...prev, [field]: undefined }));
+        }
+
+        // Reactivate suggestions if user types again
+        if ((field === 'title' || field === 'author') && !activeSuggestionField) {
+            setActiveSuggestionField(field);
         }
     };
 
     // Handle tab change
-    const handleTabChange = (value: string) => {
+    const handleTabChange = (value: 'google' | 'manual') => {
         setActiveTab(value);
 
         if (value === 'google') {
@@ -468,35 +466,12 @@ const AddBookForm: React.FC = () => {
     };
 
     if (submitSuccess) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50 flex items-center justify-center p-4">
-                <Card className="w-full max-w-md text-center">
-                    <CardContent className="pt-6">
-                        <div className="flex flex-col items-center space-y-4">
-                            <div className="p-4 bg-green-100 rounded-full">
-                                <CheckCircle className="w-8 h-8 text-green-600" />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-semibold text-slate-900 mb-2">Book Added Successfully!</h3>
-                                <p className="text-slate-600 text-sm">
-                                    "{formData.title}" has been added to your library.
-                                </p>
-                            </div>
-                            <div className="flex items-center text-sm text-slate-500">
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Redirecting to library...
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        );
+        return <SuccessMessage title={formData.title} />;
     }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50 py-8">
             <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header */}
                 <div className="mb-8">
                     <Button
                         variant="ghost"
@@ -518,9 +493,8 @@ const AddBookForm: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Form Card */}
                 <Card className="shadow-lg border-slate-200">
-                    <CardHeader className=" border-red-100">
+                    <CardHeader className="border-red-100">
                         <CardTitle className="text-xl text-slate-900 flex items-center">
                             <BookOpen className="w-5 h-5 mr-2 text-red-600" />
                             Book Information
@@ -532,160 +506,47 @@ const AddBookForm: React.FC = () => {
 
                     <CardContent className="p-6">
                         <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* Title Field with Autocomplete */}
-                            <div className="space-y-2 relative">
-                                <Label htmlFor="title" className="text-sm font-medium text-slate-700 flex items-center">
-                                    <BookOpen className="w-4 h-4 mr-1.5 text-slate-500" />
-                                    Book Title *
-                                </Label>
-                                <div className="relative">
-                                    <Input
-                                        ref={titleInputRef}
-                                        id="title"
-                                        type="text"
-                                        placeholder="Enter the book title"
-                                        value={formData.title}
-                                        autoFocus={true}
-                                        onChange={(e) => handleInputChange('title', e.target.value)}
-                                        onFocus={() => handleInputFocus('title')}
-                                        onBlur={handleInputBlur}
-                                        onKeyDown={handleSuggestionKeyDown}
-                                        className={cn(
-                                            "transition-colors duration-200",
-                                            errors.title
-                                                ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                                                : "border-slate-300 focus:border-red-500 focus:ring-red-500"
-                                        )}
-                                    />
-                                    {(isLoadingSuggestions && activeSuggestionField === 'title') && (
-                                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                                            <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
-                                        </div>
-                                    )}
-                                </div>
-                                {errors.title && (
-                                    <div className="flex items-center text-sm text-red-600 mt-1">
-                                        <AlertCircle className="w-4 h-4 mr-1" />
-                                        {errors.title}
-                                    </div>
-                                )}
-                            </div>
 
-                            {/* Author Field with Autocomplete */}
-                            <div className="space-y-2 relative">
-                                <Label htmlFor="author" className="text-sm font-medium text-slate-700 flex items-center">
-                                    <User className="w-4 h-4 mr-1.5 text-slate-500" />
-                                    Author *
-                                </Label>
-                                <div className="relative">
-                                    <Input
-                                        ref={authorInputRef}
-                                        id="author"
-                                        type="text"
-                                        placeholder="Enter the author's name"
-                                        value={formData.author}
-                                        onChange={(e) => handleInputChange('author', e.target.value)}
-                                        onFocus={() => handleInputFocus('author')}
-                                        onBlur={handleInputBlur}
-                                        onKeyDown={handleSuggestionKeyDown}
-                                        className={cn(
-                                            "transition-colors duration-200",
-                                            errors.author
-                                                ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                                                : "border-slate-300 focus:border-red-500 focus:ring-red-500"
-                                        )}
-                                    />
-                                    {(isLoadingSuggestions && activeSuggestionField === 'author') && (
-                                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                                            <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
-                                        </div>
-                                    )}
-                                </div>
-                                {errors.author && (
-                                    <div className="flex items-center text-sm text-red-600 mt-1">
-                                        <AlertCircle className="w-4 h-4 mr-1" />
-                                        {errors.author}
-                                    </div>
-                                )}
-                            </div>
+                            <FormInputField
+                                id="title"
+                                label="Book Title *"
+                                icon={<BookOpen className="w-4 h-4 mr-1.5 text-slate-500" />}
+                                value={formData.title}
+                                placeholder="Enter the book title"
+                                error={errors.title}
+                                isLoading={isLoadingSuggestions && activeSuggestionField === 'title'}
+                                autoFocus
+                                inputRef={titleInputRef}
+                                onChange={(val) => handleInputChange('title', val)}
+                                onFocus={() => handleInputFocus('title')}
+                                onBlur={handleInputBlur}
+                                onKeyDown={handleSuggestionKeyDown}
+                            />
 
-                            {/* Suggestions Dropdown */}
-                            {showSuggestions && suggestions.length > 0 && (
-                                <div
-                                    ref={suggestionContainerRef}
-                                    className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
-                                    style={{
-                                        top: activeSuggestionField === 'title' ? '140px' : '220px',
-                                        left: '0',
-                                        right: '0'
-                                    }}
-                                >
-                                    <div className="p-2">
-                                        <div className="flex items-center justify-between mb-2 px-2">
-                                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                                                Book Suggestions
-                                            </span>
-                                            <Badge variant="secondary" className="text-xs">
-                                                {suggestions.length} found
-                                            </Badge>
-                                        </div>
-                                        {suggestions.map((suggestion, index) => (
-                                            <div
-                                                key={suggestion.id}
-                                                onClick={() => handleSuggestionSelect(suggestion)}
-                                                className={cn(
-                                                    "flex items-start space-x-3 p-3 rounded-lg cursor-pointer transition-colors",
-                                                    selectedSuggestionIndex === index
-                                                        ? "bg-red-50 border border-red-200"
-                                                        : "hover:bg-slate-50"
-                                                )}
-                                            >
-                                                {/* Book Cover Thumbnail */}
-                                                <div className="flex-shrink-0 w-12 h-16 bg-slate-100 rounded border overflow-hidden">
-                                                    {suggestion.coverUrl ? (
-                                                        <img
-                                                            src={suggestion.coverUrl}
-                                                            alt="Book cover"
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center">
-                                                            <BookOpen className="w-4 h-4 text-slate-400" />
-                                                        </div>
-                                                    )}
-                                                </div>
+                            <FormInputField
+                                id="author"
+                                label="Author *"
+                                icon={<User className="w-4 h-4 mr-1.5 text-slate-500" />}
+                                value={formData.author}
+                                placeholder="Enter the author's name"
+                                error={errors.author}
+                                isLoading={isLoadingSuggestions && activeSuggestionField === 'author'}
+                                inputRef={authorInputRef}
+                                onChange={(val) => handleInputChange('author', val)}
+                                onFocus={() => handleInputFocus('author')}
+                                onBlur={handleInputBlur}
+                                onKeyDown={handleSuggestionKeyDown}
+                            />
 
-                                                {/* Book Details */}
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="font-medium text-slate-900 truncate">
-                                                        {suggestion.title}
-                                                    </div>
-                                                    <div className="text-sm text-slate-600 truncate">
-                                                        by {suggestion.author}
-                                                    </div>
-                                                    <div className="flex items-center space-x-2 mt-1">
-                                                        {suggestion.isbn && (
-                                                            <Badge variant="outline" className="text-xs font-mono">
-                                                                {suggestion.isbn}
-                                                            </Badge>
-                                                        )}
-                                                        {suggestion.publishedDate && (
-                                                            <span className="text-xs text-slate-500 flex items-center">
-                                                                <Clock className="w-3 h-3 mr-1" />
-                                                                {suggestion.publishedDate.split('-')[0]}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
+                            <BookSuggestionsDropdown
+                                suggestions={suggestions}
+                                show={showSuggestions}
+                                selectedIndex={selectedSuggestionIndex}
+                                onSelect={handleSuggestionSelect}
+                                activeField={activeSuggestionField}
+                                containerRef={suggestionContainerRef}
+                            />
 
-                                                <ChevronDown className="w-4 h-4 text-slate-400 transform rotate-[-90deg]" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ISBN Field */}
                             <div className="space-y-2">
                                 <Label htmlFor="isbn" className="text-sm font-medium text-slate-700 flex items-center">
                                     <Hash className="w-4 h-4 mr-1.5 text-slate-500" />
@@ -716,210 +577,34 @@ const AddBookForm: React.FC = () => {
                                 </p>
                             </div>
 
-                            {/* Book Cover Image Section */}
-                            <div className="space-y-4 pt-2">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-sm font-medium text-slate-700 flex items-center">
-                                        <ImageIcon className="w-4 h-4 mr-1.5 text-slate-500" />
-                                        Book Cover
-                                        <Badge variant="secondary" className="ml-2 text-xs">Optional</Badge>
-                                    </Label>
-
-                                    {(imageSource || isSearchingImage) && (
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={clearImage}
-                                            className="h-8 px-2 text-slate-500"
-                                        >
-                                            <X className="w-4 h-4 mr-1" />
-                                            Clear
-                                        </Button>
-                                    )}
-                                </div>
-
-                                <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                                    <TabsList className="grid w-full grid-cols-2 mb-4">
-                                        <TabsTrigger value="google" className="flex items-center">
-                                            <Search className="w-4 h-4 mr-2" />
-                                            Find Cover
-                                        </TabsTrigger>
-                                        <TabsTrigger value="manual" className="flex items-center">
-                                            <Camera className="w-4 h-4 mr-2" />
-                                            Upload Photo
-                                        </TabsTrigger>
-                                    </TabsList>
-
-                                    {/* Google Books Cover Tab */}
-                                    <TabsContent value="google" className="space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <p className="text-sm text-slate-600">
-                                                {isSearchingImage
-                                                    ? "Searching for book cover..."
-                                                    : googleBooksImage
-                                                        ? "Cover found!"
-                                                        : "Enter ISBN or title and author to find cover"}
-                                            </p>
-                                            {!isSearchingImage && formData.title && formData.author && (
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={searchBookImage}
-                                                    className="h-8"
-                                                >
-                                                    <RefreshCw className="w-3 h-3 mr-2" />
-                                                    Refresh
-                                                </Button>
-                                            )}
-                                        </div>
-
-                                        <div className="border border-slate-200 rounded-lg p-4 flex items-center justify-center bg-slate-50 min-h-[200px]">
-                                            {isSearchingImage ? (
-                                                <div className="flex flex-col items-center justify-center text-slate-400">
-                                                    <Loader2 className="w-8 h-8 animate-spin mb-2" />
-                                                    <span className="text-sm">Searching...</span>
-                                                </div>
-                                            ) : googleBooksImage ? (
-                                                <div className="relative">
-                                                    <img
-                                                        src={googleBooksImage}
-                                                        alt="Book cover"
-                                                        className="max-h-[200px] rounded shadow-md"
-                                                    />
-                                                    <Badge className="absolute top-2 right-2 bg-blue-100 text-blue-800">
-                                                        <Search className="w-3 h-3 mr-1" />
-                                                        Google Books
-                                                    </Badge>
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center justify-center text-slate-400">
-                                                    <Search className="w-8 h-8 mb-2" />
-                                                    <span className="text-sm text-center">
-                                                        {formData.title && formData.author
-                                                            ? "No cover found. Try entering an ISBN number."
-                                                            : "Enter book details to search for cover"}
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </TabsContent>
-
-                                    {/* Manual Upload Tab with FileUploader */}
-                                    <TabsContent value="manual" className="space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <p className="text-sm text-slate-600">
-                                                Upload a photo of your book cover
-                                            </p>
-                                        </div>
-
-                                        <div className="border border-slate-200 rounded-lg p-4 flex flex-col items-center justify-center bg-slate-50 min-h-[200px]">
-                                            {uploadedS3Key ? (
-                                                <div className="relative flex flex-col items-center">
-                                                    <div className="mb-2 text-green-600 flex items-center">
-                                                        <CheckCircle className="w-5 h-5 mr-1" />
-                                                        <span>Upload complete!</span>
-                                                    </div>
-                                                    <Badge className="mb-4 bg-purple-100 text-purple-800">
-                                                        <Camera className="w-3 h-3 mr-1" />
-                                                        Your Photo
-                                                    </Badge>
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={clearImage}
-                                                    >
-                                                        Upload Different Image
-                                                    </Button>
-                                                </div>
-                                            ) : (
-                                                <FileUploader
-                                                    acceptedFileTypes={['image/*']}
-                                                    maxFileSize={5000000} // 5MB
-                                                    maxFileCount={1} // Add the required maxFileCount prop
-                                                    path={({ identityId }) => `bookImages/${identityId}/`}
-                                                    isResumable={true}
-                                                    onUploadStart={() => {
-                                                        setIsUploading(true);
-                                                        // Clear any existing errors
-                                                        if (errors.image) {
-                                                            setErrors(prev => ({ ...prev, image: undefined }));
-                                                        }
-                                                    }}
-                                                    onUploadSuccess={(data) => {
-                                                        setIsUploading(false);
-                                                        setImageSource('manual');
-                                                        // Add null check for data.key
-                                                        if (data.key) {
-                                                            setUploadedS3Key(data.key);
-                                                        } else {
-                                                            setErrors(prev => ({
-                                                                ...prev,
-                                                                image: 'Failed to upload image: No file key returned'
-                                                            }));
-                                                        }
-                                                    }}
-                                                    onUploadError={(error) => {
-                                                        setIsUploading(false);
-                                                        setErrors(prev => ({
-                                                            ...prev,
-                                                            image: 'Failed to upload image: ' + error
-                                                        }));
-                                                    }}
-                                                    components={{
-                                                        Container: ({ children }) => (
-                                                            <div className="w-full flex flex-col items-center">
-                                                                {children}
-                                                            </div>
-                                                        ),
-                                                        DropZone: ({ children }) => (
-                                                            <div className="w-full border-2 border-dashed border-slate-300 rounded-lg p-6 flex flex-col items-center justify-center hover:border-red-300 transition-colors">
-                                                                {children}
-                                                            </div>
-                                                        ),
-                                                        FilePicker: ({ children, ...props }) => (
-                                                            <div className="flex flex-col items-center">
-                                                                <div className="mb-4 p-3 bg-slate-100 rounded-full">
-                                                                    <Camera className="w-6 h-6 text-slate-400" />
-                                                                </div>
-                                                                <p className="text-sm text-slate-500 mb-4 text-center">
-                                                                    Drag and drop a photo here, or click to select
-                                                                </p>
-                                                                <Button
-                                                                    type="button"
-                                                                    variant="outline"
-                                                                    onClick={props.onClick}
-                                                                >
-                                                                    <Upload className="w-4 h-4 mr-2" />
-                                                                    Select Photo
-                                                                </Button>
-                                                                {children}
-                                                            </div>
-                                                        )
-                                                    }}
-                                                />
-                                            )}
-                                        </div>
-
-                                        {errors.image && (
-                                            <div className="flex items-center text-sm text-red-600 mt-1">
-                                                <AlertCircle className="w-4 h-4 mr-1" />
-                                                {errors.image}
-                                            </div>
-                                        )}
-
-                                        <p className="text-xs text-slate-500">
-                                            Accepted formats: JPEG, PNG, WebP, GIF. Max size: 5MB.
-                                        </p>
-                                    </TabsContent>
-                                </Tabs>
-                            </div>
+                            <ImageTabSwitcher
+                                activeTab={activeTab}
+                                onTabChange={handleTabChange}
+                                imageSource={imageSource}
+                                isSearchingImage={isSearchingImage}
+                                googleBooksImage={googleBooksImage}
+                                uploadedS3Key={uploadedS3Key}
+                                onClearImage={clearImage}
+                                onRefreshGoogleImage={searchBookImage}
+                                onUploadStart={() => {
+                                    setIsUploading(true);
+                                    if (errors.image) setErrors(prev => ({ ...prev, image: undefined }));
+                                }}
+                                onUploadSuccess={(key) => {
+                                    setIsUploading(false);
+                                    setImageSource('manual');
+                                    setUploadedS3Key(key);
+                                }}
+                                onUploadError={(msg) => {
+                                    setIsUploading(false);
+                                    setErrors(prev => ({ ...prev, image: msg }));
+                                }}
+                                imageError={errors.image}
+                                canRefresh={!!formData.title && !!formData.author}
+                            />
 
                             <Separator className="my-6" />
 
-                            {/* Form Actions */}
                             <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
                                 <Button
                                     type="button"
@@ -959,24 +644,7 @@ const AddBookForm: React.FC = () => {
                     </CardContent>
                 </Card>
 
-                {/* Help Card */}
-                <Card className="mt-6 border-blue-200 bg-blue-50/50">
-                    <CardContent className="p-4">
-                        <div className="flex items-start space-x-3">
-                            <div className="p-1 bg-blue-100 rounded-full flex-shrink-0 mt-0.5">
-                                <AlertCircle className="w-4 h-4 text-blue-600" />
-                            </div>
-                            <div>
-                                <h4 className="text-sm font-medium text-blue-900 mb-1">Need help?</h4>
-                                <p className="text-sm text-blue-700">
-                                    You can find the ISBN on the back cover or copyright page of most books.
-                                    It's usually a 10 or 13-digit number that helps identify the book uniquely.
-                                    Adding an ISBN or detailed title/author information helps us find the book cover automatically.
-                                </p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                <HelpCard />
             </div>
         </div>
     );
