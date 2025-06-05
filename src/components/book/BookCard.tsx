@@ -17,7 +17,7 @@ import { BookCardProps } from "@/components/book/bookTypes.ts";
 import { getUrl } from "aws-amplify/storage";
 
 const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
-    console.log("book: ", book);
+
     const [imageLoading, setImageLoading] = useState(book.imageUrl ? true : false);
     const [imageError, setImageError] = useState(false);
     const [resolvedImageUrl, setResolvedImageUrl] = useState<string | null>(null);
@@ -29,26 +29,21 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
     // Resolve S3 URLs for manual uploads
     useEffect(() => {
         const resolveImageUrl = async () => {
-            console.log('Starting resolveImageUrl, imageUrl:', book.imageUrl, 'source:', book.imageSource);
             if (!book.imageUrl) {
-                console.log('No imageUrl, setting to null');
                 setResolvedImageUrl(null);
                 return;
             }
 
             try {
                 if (book.imageSource === 'google_books') {
-                    console.log('Google Books URL:', book.imageUrl);
                     setResolvedImageUrl(book.imageUrl);
                     return;
                 }
 
                 if (book.imageSource === 'manual') {
                     setIsResolvingUrl(true);
-                    console.log('Manual source, checking if S3 key:', book.imageUrl);
 
                     if (book.imageUrl.startsWith('bookImages/')) {
-                        console.log('Fetching signed URL for:', book.imageUrl);
                         try {
                             const {url} = await getUrl({
                                 path: book.imageUrl,
@@ -57,20 +52,17 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
                                     expiresIn: 3600
                                 }
                             });
-                            console.log('Signed URL:', url.toString());
                             setResolvedImageUrl(url.toString());
                         } catch (error) {
                             console.error('Error getting signed URL:', error);
                             setImageError(true);
                         }
                     } else {
-                        console.log('Not an S3 key, using directly:', book.imageUrl);
                         setResolvedImageUrl(book.imageUrl);
                     }
 
                     setIsResolvingUrl(false);
                 } else {
-                    console.log('Default case, using URL directly:', book.imageUrl);
                     setResolvedImageUrl(book.imageUrl);
                 }
             } catch (error) {
@@ -94,11 +86,6 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
         setImageError(true);
     };
 
-
-    useEffect(() => {
-        console.log("Resimgurl ", resolvedImageUrl);
-
-    }, [resolvedImageUrl]);
 
     return (
         <Card className={cn(
@@ -139,25 +126,29 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
                 {/* Book Information Section */}
                 <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                     <CardHeader className="pb-3 pt-3 sm:pt-6">
-                        <div className="flex items-start gap-2 sm:gap-3">
+                        <div className="flex items-start gap-2 sm:gap-3 w-full max-w-full overflow-hidden">
+                            {/* Left: Title + Author */}
                             <div className="flex-1 min-w-0">
                                 <CardTitle className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-red-900 transition-colors duration-300 line-clamp-2 break-words">
                                     {book.title}
                                 </CardTitle>
+
                                 <CardDescription className="flex items-center mt-1 sm:mt-2 text-slate-600 min-w-0">
                                     <User className="w-3 sm:w-4 h-3 sm:h-4 mr-1 sm:mr-1.5 flex-shrink-0" />
                                     <span className="truncate text-sm sm:text-base">{book.author}</span>
                                 </CardDescription>
                             </div>
+
+                            {/* Right: Availability Badge */}
                             <div className="flex-shrink-0">
                                 {book.loanedOut ? (
-                                    <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-200 whitespace-nowrap text-xs sm:text-sm">
-                                        <AlertCircle className="w-2.5 sm:w-3 h-2.5 sm:h-3 mr-0.5 sm:mr-1" />
-                                        Loaned
+                                    <Badge className="max-w-[120px] truncate text-ellipsis whitespace-nowrap bg-red-100 text-red-800 text-xs sm:text-sm">
+                                        <AlertCircle className="w-3.5 sm:w-4 h-3.5 sm:h-4 mr-0.5 sm:mr-1" />
+                                        Loaned Out
                                     </Badge>
                                 ) : (
-                                    <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-200 whitespace-nowrap text-xs sm:text-sm">
-                                        <CheckCircle className="w-2.5 sm:w-3 h-2.5 sm:h-3 mr-0.5 sm:mr-1" />
+                                    <Badge className="max-w-[120px] truncate text-ellipsis whitespace-nowrap bg-green-100 text-green-800 text-xs sm:text-sm">
+                                        <CheckCircle className="w-3.5 sm:w-4 h-3.5 sm:h-4 mr-0.5 sm:mr-1" />
                                         Available
                                     </Badge>
                                 )}

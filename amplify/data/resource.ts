@@ -1,44 +1,43 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 
-/*== STEP 1 ===============================================================
-The section below creates a Todo database table with a "content" field. Try
-adding a new "isDone" field as a boolean. The authorization rule below
-specifies that any user authenticated via an API key can "create", "read",
-"update", and "delete" any "Todo" records.
-=========================================================================*/
+
 const schema = a.schema({
+
+  User: a
+      .model({
+        sub: a.id().required(), // Cognito user ID
+        email: a.string().required(),
+        address: a.string(),
+        city: a.string(),
+        postalCode: a.string(),
+        coordinates: a.customType({
+          lat: a.float().required(),
+          long: a.float().required(),
+        }),
+          books: a.hasMany("Book", "ownerId")
+      })
+      .identifier(['sub']) // Use Cognito sub as unique ID
+      .authorization((allow) => [allow.owner()]),
+
+
+
   Book: a.model({
     title: a.string().required(),
     author: a.string().required(),
     isbn: a.string(), // optional
-    owner: a.string().required(),
+    ownerId: a.string().required(),
     ownerEmail: a.string().required(),
     createdAt: a.timestamp().required(),
     loanedOut: a.boolean().required(),
     loanedTo: a.string(),
     imageUrl: a.string(), // optional - stores the book cover image URL
     imageSource: a.string(), // optional - tracks how the image was obtained ('manual', 'google_books', or null)
-  }).authorization(allow => [allow.owner()]),
+      ownerRef: a.belongsTo("User", "ownerId")  // Link to User
+  }).authorization(allow => [
+      allow.authenticated().to(['read']),
+      allow.owner().to(['read', "create", "update", "delete"]),
+  ])
 });
-
-// Might switch to this to allow :
-/**
-
- Book: a.model({
-   title: a.string().required(),
-   author: a.string().required(),
-   isbn: a.string(),
-   owner: a.string().required(),
-   ownerEmail: a.string().required(),
-   createdAt: a.timestamp().required(),
-   loanedOut: a.boolean().required(),
-   loanedTo: a.string(),
- }).authorization(allow => [
- allow.auth().to(['read']),      // all signed-in users can read books
- allow.owner().to(['create', 'update', 'delete']), // only owner can write
- ]);
-
- */
 
 
 export type Schema = ClientSchema<typeof schema>;
@@ -51,32 +50,3 @@ export const data = defineData({
     defaultAuthorizationMode: 'userPool',
   },
 });
-
-/*== STEP 2 ===============================================================
-Go to your frontend source code. From your client-side code, generate a
-Data client to make CRUDL requests to your table. (THIS SNIPPET WILL ONLY
-WORK IN THE FRONTEND CODE FILE.)
-
-Using JavaScript or Next.js React Server Components, Middleware, Server 
-Actions or Pages Router? Review how to generate Data clients for those use
-cases: https://docs.amplify.aws/gen2/build-a-backend/data/connect-to-API/
-=========================================================================*/
-
-/*
-"use client"
-import { generateClient } from "aws-amplify/data";
-import type { Schema } from "@/amplify/data/resource";
-
-const client = generateClient<Schema>() // use this Data client for CRUDL requests
-*/
-
-/*== STEP 3 ===============================================================
-Fetch records from the database and use them in your frontend component.
-(THIS SNIPPET WILL ONLY WORK IN THE FRONTEND CODE FILE.)
-=========================================================================*/
-
-/* For example, in a React component, you can use this snippet in your
-  function's RETURN statement */
-// const { data: todos } = await client.models.Todo.list()
-
-// return <ul>{todos.map(todo => <li key={todo.id}>{todo.content}</li>)}</ul>

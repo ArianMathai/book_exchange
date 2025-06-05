@@ -6,13 +6,17 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Menu, Home, Book, Plus, User, LogOut, Sparkles } from 'lucide-react';
 
-import { useState } from 'react';
+import {useEffect, useState} from 'react';
+import {fetchUserAttributes} from "aws-amplify/auth";
+import {client} from "@/lib/amplifyClient.ts";
 
 // Collapsible menu on mobile and sticky menu on desktop
 const BurgerMenu: React.FC = () => {
     const { signOut } = useAuthenticator();
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
+    const [checkingProfile, setCheckingProfile] = useState(true);
+
 
     const menuItems = [
         { to: '/', icon: Home, label: 'Home', description: 'Dashboard & Overview' },
@@ -20,6 +24,37 @@ const BurgerMenu: React.FC = () => {
         { to: '/add-book', icon: Plus, label: 'Add Book', description: 'Share a new book', badge: 'New' },
         { to: '/profile', icon: User, label: 'Profile', description: 'Account settings' },
     ];
+
+    // Check if user has set up location, else -> redirect to setup page
+    useEffect(() => {
+        const checkUserProfile = async () => {
+            try {
+                const attributes = await fetchUserAttributes();
+                const sub = attributes?.sub;
+
+                if (!sub) {
+                    console.error("❌ No Cognito user ID found. Signing out...");
+                    signOut();
+                    return;
+                }
+
+                const res = await client.models.User.get({ sub });
+
+                if (!res?.data || !res.data.coordinates) {
+                    navigate("/setup");
+                    return;
+                }
+            } catch (err) {
+                console.error("❌ Error checking user profile:", err);
+                signOut(); // Optionally force logout if profile fetch fails
+            } finally {
+                setCheckingProfile(false);
+            }
+        };
+
+        checkUserProfile();
+    }, []);
+
 
     const handleSignOut = () => {
         setIsOpen(false);
@@ -34,6 +69,14 @@ const BurgerMenu: React.FC = () => {
     const handleDesktopNavigation = (path: string) => {
         navigate(path);
     };
+
+    if (checkingProfile) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <div className="text-slate-500 text-sm">Checking your profile...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50">
