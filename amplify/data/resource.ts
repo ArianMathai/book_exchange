@@ -2,18 +2,41 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 
 
 const schema = a.schema({
+
+  User: a
+      .model({
+        sub: a.id().required(), // Cognito user ID
+        email: a.string().required(),
+        address: a.string(),
+        city: a.string(),
+        postalCode: a.string(),
+        coordinates: a.customType({
+          lat: a.float().required(),
+          long: a.float().required(),
+        }),
+          books: a.hasMany("Book", "ownerId")
+      })
+      .identifier(['sub']) // Use Cognito sub as unique ID
+      .authorization((allow) => [allow.owner()]),
+
+
+
   Book: a.model({
     title: a.string().required(),
     author: a.string().required(),
     isbn: a.string(), // optional
-    owner: a.string().required(),
+    ownerId: a.string().required(),
     ownerEmail: a.string().required(),
     createdAt: a.timestamp().required(),
     loanedOut: a.boolean().required(),
     loanedTo: a.string(),
     imageUrl: a.string(), // optional - stores the book cover image URL
     imageSource: a.string(), // optional - tracks how the image was obtained ('manual', 'google_books', or null)
-  }).authorization(allow => [allow.owner()]),
+      ownerRef: a.belongsTo("User", "ownerId")  // Link to User
+  }).authorization(allow => [
+      allow.authenticated().to(['read']),
+      allow.owner().to(['read', "create", "update", "delete"]),
+  ])
 });
 
 

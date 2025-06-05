@@ -19,7 +19,6 @@ import { cn } from '@/lib/utils.ts';
 import { client} from "@/lib/amplifyClient.ts";
 import { fetchUserAttributes } from "aws-amplify/auth";
 import { findBookCover, searchCombinedSuggestions, BookSuggestion } from '@/services/googleBooksApi';
-import {getCurrentLocation} from "@/services/getCurrentLocation.ts";
 import {addBookToIndex} from "@/services/addBookToIndex.ts";
 import SuccessMessage from "@/components/add-book-form/SuccessMessage.tsx";
 import FormInputField from "@/components/add-book-form/FormInputField.tsx";
@@ -39,14 +38,13 @@ interface FormErrors {
     title?: string;
     author?: string;
     isbn?: string;
-    owner?: string;
+    ownerId?: string;
     image?: string;
 }
 
 // Image source type
 type ImageSource = 'manual' | 'google_books' | null;
 
-//TODO: Possibly remove search book cover function, as search book by title also returns the cover? Explore this
 
 const AddBookForm: React.FC = () => {
     const navigate = useNavigate();
@@ -423,7 +421,7 @@ const AddBookForm: React.FC = () => {
                 title: formData.title.trim(),
                 author: formData.author.trim(),
                 isbn: formData.isbn.trim() || null,
-                owner: sub,
+                ownerId: sub,
                 ownerEmail: ownerEmail,
                 createdAt: Math.floor(Date.now() / 1000), // Unix timestamp
                 loanedOut: false,
@@ -445,8 +443,20 @@ const AddBookForm: React.FC = () => {
 
             // After successful creation, add to index database
             try {
-                // Optional: Get user's location for the index
-                const coordinates = await getCurrentLocation();
+
+                //Get user's location for the index
+                const userRecord = await client.models.User.get({ sub });
+
+                if (!userRecord?.data?.coordinates) {
+                    throw new Error('User coordinates not found. Please set your location first.');
+                }
+
+                const coordinates = {
+                    latitude: userRecord.data.coordinates.lat,
+                    longitude: userRecord.data.coordinates.long
+                };
+                console.log("Coords: ", coordinates);
+
 
                 // Add book to the index database using the same ID
                 await addBookToIndex({
@@ -661,10 +671,10 @@ const AddBookForm: React.FC = () => {
                                 </Button>
                             </div>
 
-                            {errors.owner && (
+                            {errors.ownerId && (
                                 <div className="flex items-center text-sm text-red-600 mt-4 p-3 bg-red-50 rounded-md border border-red-100">
                                     <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />
-                                    <span>{errors.owner}</span>
+                                    <span>{errors.ownerId}</span>
                                 </div>
                             )}
                         </form>
