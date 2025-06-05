@@ -86,9 +86,18 @@ const AddBookForm: React.FC = () => {
     const suggestionContainerRef = useRef<HTMLDivElement>(null);
     const titleInputRef = useRef<HTMLInputElement>(null);
     const authorInputRef = useRef<HTMLInputElement>(null);
+    const skipNextImageSearchRef = useRef(false);
+    const lastSuggestionQueryRef = useRef<{ title: string; author: string } | null>(null);
+
+
 
     // Effect to search for book cover when ISBN or title+author changes
     useEffect(() => {
+        // If we chose a book suggestion we can skip the book cover search
+        if (skipNextImageSearchRef.current) {
+            skipNextImageSearchRef.current = false;
+            return;
+        }
         // Clear any existing timer
         if (searchTimerRef.current) {
             window.clearTimeout(searchTimerRef.current);
@@ -147,14 +156,28 @@ const AddBookForm: React.FC = () => {
 
     // Function to search for book suggestions
     const searchSuggestions = async () => {
+
+        const { title, author } = formData;
+
+        // Skip if this exact query was just made
+        if (
+            lastSuggestionQueryRef.current &&
+            lastSuggestionQueryRef.current.title === title &&
+            lastSuggestionQueryRef.current.author === author
+        ) {
+            return;
+        }
+
         try {
             setIsLoadingSuggestions(true);
-            const { title, author } = formData;
 
             const results = await searchCombinedSuggestions(title, author, 8); // change maxResults to get more book suggestions (limit is 40)
             setSuggestions(results);
             setShowSuggestions(results.length > 0);
             setSelectedSuggestionIndex(-1);
+
+            // Save the current query
+            lastSuggestionQueryRef.current = { title, author };
         } catch (error) {
             console.error('Error searching for suggestions:', error);
             setSuggestions([]);
@@ -203,6 +226,8 @@ const AddBookForm: React.FC = () => {
             author: suggestion.author,
             isbn: suggestion.isbn || ''
         }));
+
+        skipNextImageSearchRef.current = true;
 
         // If suggestion has a cover image, use it
         if (suggestion.coverUrl) {
