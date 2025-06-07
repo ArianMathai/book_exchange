@@ -1,5 +1,7 @@
 // googleMapsApi
 
+import {client} from "@/lib/amplifyClient.ts";
+
 export interface AddressSuggestion {
     description: string;
     place_id: string;
@@ -11,19 +13,35 @@ export interface AddressDetails {
     postalCode: string;
 }
 
+export const fetchGoogleMapsKey = async (): Promise<string | null> => {
+    try {
+        const result = await client.queries.fetchMapsApiKey();
+        return result.data ?? null;
+    } catch (error) {
+        console.error('❌ Failed to fetch Google Maps API key:', error);
+        return null;
+    }
+};
+
 // Load the Google Maps script if not already present
 export const loadGoogleMapsScript = (apiKey: string) => {
+    if (!apiKey) {
+        console.error("Google Maps API key is missing");
+        return;
+    }
+
     if (typeof window.google === 'object') return;
 
     if (document.getElementById('google-maps-script')) return;
 
     const script = document.createElement('script');
     script.id = 'google-maps-script';
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
     script.async = true;
     script.defer = true;
     document.body.appendChild(script);
 };
+
 
 
 // Reverse geocode lat/lng to full address

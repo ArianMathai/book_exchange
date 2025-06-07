@@ -11,9 +11,8 @@ import { Separator } from '@/components/ui/separator';
 import { getCurrentLocation } from '@/services/getCurrentLocation';
 import { fetchUserAttributes } from 'aws-amplify/auth';
 import { client } from '@/lib/amplifyClient';
-import { reverseGeocode, loadGoogleMapsScript } from '@/services/googleMapsApi';
+import {reverseGeocode, loadGoogleMapsScript, fetchGoogleMapsKey} from '@/services/googleMapsApi';
 
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 const SetupLocationPage = () => {
     const navigate = useNavigate();
@@ -31,12 +30,17 @@ const SetupLocationPage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Cache api key
+    const googleMapsKeyRef = useRef<string | null>(null);
+
+
+
     const initAutocomplete = () => {
         if (!window.google || !addressInputRef.current) return;
 
         const autocomplete = new window.google.maps.places.Autocomplete(addressInputRef.current, {
             types: ['address'],
-            componentRestrictions: { country: 'no' } // Optional: restrict to Norway
+            componentRestrictions: { country: 'no' } // Restricts to Norway
         });
 
         autocomplete.addListener('place_changed', () => {
@@ -67,14 +71,31 @@ const SetupLocationPage = () => {
     };
 
     useEffect(() => {
+        const setupGoogleMaps = async () => {
+            if (!googleMapsKeyRef.current) {
+                const key = await fetchGoogleMapsKey();
+                console.log("🔑 Fetched Google Maps key:", key);
+                googleMapsKeyRef.current = key;
+            }
+
+            const key = googleMapsKeyRef.current;
+
+            if (key) {
+                loadGoogleMapsScript(key);
+            } else {
+                console.error('❌ Could not load Google Maps script - missing API key');
+                setError('Could not load Google Maps');
+            }
+        };
+
+        setupGoogleMaps();
+
         const waitForGoogle = setInterval(() => {
             if (window.google && window.google.maps && window.google.maps.places) {
                 clearInterval(waitForGoogle);
                 initAutocomplete();
             }
         }, 300);
-
-        loadGoogleMapsScript(GOOGLE_MAPS_API_KEY);
 
         return () => clearInterval(waitForGoogle);
     }, []);
@@ -124,7 +145,10 @@ const SetupLocationPage = () => {
 
             if (!sub || !email) throw new Error('Missing user info');
 
-            const userData = {
+            // Check if user already exists
+            const existing = await client.models.User.get({ sub });
+
+            const userPayload = {
                 sub,
                 email,
                 coordinates: {
@@ -136,14 +160,21 @@ const SetupLocationPage = () => {
                 postalCode: formData.postalCode
             };
 
-            // Check if user already exists
-            const existing = await client.models.User.get({ sub });
+            let result;
 
             if (existing?.data) {
-                await client.models.User.update(userData);
+                result = await client.models.User.update(userPayload);
+                console.log('✅ User updated:', result);
             } else {
-                await client.models.User.create(userData);
+                result = await client.models.User.create(userPayload);
+                console.log('✅ User created:', result);
             }
+
+
+            if (!result?.data) {
+                throw new Error('❌ Failed to save user');
+            }
+
 
 
             navigate('/library');
@@ -201,7 +232,7 @@ const SetupLocationPage = () => {
 
                             <Separator />
 
-                            <div className="flex items-center space-x-4">
+                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
                                 <Button
                                     type="button"
                                     variant="secondary"

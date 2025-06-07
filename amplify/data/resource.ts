@@ -36,7 +36,13 @@ const schema = a.schema({
   }).authorization(allow => [
       allow.authenticated().to(['read']),
       allow.owner().to(['read', "create", "update", "delete"]),
-  ])
+  ]),
+
+    fetchMapsApiKey: a
+        .query()
+        .returns(a.string())
+        .authorization((allow) => [allow.authenticated()])
+        .handler(a.handler.function('fetchMapsApiKey')),
 });
 
 

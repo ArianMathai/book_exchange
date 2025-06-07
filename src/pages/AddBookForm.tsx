@@ -416,7 +416,6 @@ const AddBookForm: React.FC = () => {
                 return;
             }
 
-            // Use the existing createBook helper and then pass to AddBook
             const bookData = {
                 title: formData.title.trim(),
                 author: formData.author.trim(),
