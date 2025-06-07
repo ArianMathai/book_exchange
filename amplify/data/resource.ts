@@ -1,4 +1,5 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import {fetchMapsApiKey} from "../functions/fetchMapsApiKey/resource";
 
 
 const schema = a.schema({
@@ -42,7 +43,7 @@ const schema = a.schema({
         .query()
         .returns(a.string())
         .authorization((allow) => [allow.authenticated()])
-        .handler(a.handler.function('fetchMapsApiKey')),
+        .handler(a.handler.function(fetchMapsApiKey)),
 });
 
 
