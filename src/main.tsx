@@ -7,10 +7,7 @@ import { Authenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import {createBrowserRouter, RouterProvider} from "react-router-dom";
 import {routes} from "@/routes/routes.tsx";
-import { loadGoogleMapsScript } from "@/services/googleMapsApi";
 
-
-loadGoogleMapsScript(import.meta.env.VITE_GOOGLE_MAPS_API_KEY);
 
 
 
