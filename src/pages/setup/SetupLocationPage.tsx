@@ -73,9 +73,7 @@ const SetupLocationPage = () => {
     useEffect(() => {
         const setupGoogleMaps = async () => {
             if (!googleMapsKeyRef.current) {
-                const key = await fetchGoogleMapsKey();
-                console.log("🔑 Fetched Google Maps key:", key);
-                googleMapsKeyRef.current = key;
+                googleMapsKeyRef.current = await fetchGoogleMapsKey();
             }
 
             const key = googleMapsKeyRef.current;
