@@ -15,6 +15,7 @@ import {
 import BookCard from "@/components/book/BookCard.tsx";
 import {BookType} from "@/components/book/bookTypes.ts";
 import {client} from "@/lib/amplifyClient.ts";
+import {fetchUserAttributes} from "aws-amplify/auth";
 
 
 // Main LibraryPage Page Component
@@ -31,9 +32,27 @@ const LibraryPage: React.FC = () => {
         setError(null);
 
         try {
-            console.log('📚 Calling Book.list()...');
+            // TODO: check that this fetches only owners books
+            const attrs = await fetchUserAttributes();
+            const currentUserSub = attrs.sub;
+
+            // Filter books by current user's sub (ownerId)
             const result = await client.models.Book.list({
-                selectionSet: ['id','title', 'author', 'isbn', 'ownerEmail', 'createdAt', 'loanedOut', 'loanedTo', 'imageSource', 'imageUrl']
+                filter: {
+                    ownerId: { eq: currentUserSub }
+                },
+                selectionSet: [
+                    'id',
+                    'title',
+                    'author',
+                    'isbn',
+                    'ownerEmail',
+                    'createdAt',
+                    'loanedOut',
+                    'loanedTo',
+                    'imageSource',
+                    'imageUrl'
+                ]
             });
 
             if (result.errors && result.errors.length > 0) {

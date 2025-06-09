@@ -313,14 +313,14 @@ const AddBookForm: React.FC = () => {
 
         if (!formData.title.trim()) {
             newErrors.title = 'Book title is required';
-        } else if (formData.title.trim().length < 2) {
-            newErrors.title = 'Title must be at least 2 characters long';
+        } else if (formData.title.trim().length < 1) {
+            newErrors.title = 'Title must be at least 1 characters long';
         }
 
         if (!formData.author.trim()) {
             newErrors.author = 'Author name is required';
-        } else if (formData.author.trim().length < 2) {
-            newErrors.author = 'Author name must be at least 2 characters long';
+        } else if (formData.author.trim().length < 1) {
+            newErrors.author = 'Author name must be at least 1 characters long';
         }
 
         // ISBN validation
