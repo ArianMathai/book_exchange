@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  add_book
+
+  Sample SAM Template for add_book
+
+Globals:
+  Function:
+    Timeout: 10
+    LoggingConfig:
+      LogFormat: JSON
+
+Parameters:
+  CognitoUserPoolId:
+    Type: String
+    Description: The ID of the existing Cognito User Pool from Amplify
+    Default: "eu-north-1_Cpr2QKIBI"
+
+Resources:
+  # Explicitly define the API Gateway
+  AddBookApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Dev
+      Cors:
+        AllowMethods: "'POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"  # For development - restrict this in production
+        MaxAge: "'600'"
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}"
+
+  AddBookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: add_book_dev/
+      Handler: app.lambdaHandler
+      Runtime: nodejs22.x
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          SECRET_NAME: "NeonDatabaseUrlDev"
+          REGION: "eu-north-1"
+      Events:
+        # POST request with authentication
+        AddBook:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AddBookApi
+            Path: /books
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+        # OPTIONS request WITHOUT authentication for CORS preflight
+        AddBookOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AddBookApi
+            Path: /books
+            Method: options
+            Auth:
+              Authorizer: NONE  # This is the key fix!
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:NeonDatabaseUrlDev-*"
+
+Outputs:
+  AddBookApi:
+    Description: API Gateway endpoint URL for Dev stage for Add Book function
+    Value: !Sub "https://${AddBookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/books/"
+  AddBookFunction:
+    Description: Add Book Lambda Function ARN
+    Value: !GetAtt AddBookFunction.Arn
+  AddBookFunctionIamRole:
+    Description: Implicit IAM Role created for Add Book function
+    Value: !GetAtt AddBookFunctionRole.Arn
