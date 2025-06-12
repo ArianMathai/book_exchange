@@ -6,13 +6,22 @@ const secretClient = new SecretsManagerClient({ region: process.env.REGION });
 let secretCache;
 
 async function getDbUrl() {
-    if (secretCache) return secretCache;
-    const response = await secretClient.send(new GetSecretValueCommand({
-        SecretId: process.env.SECRET_NAME,
-        VersionStage: "AWSCURRENT"
-    }));
-    secretCache = response.SecretString;
-    return secretCache;
+    if (secretCache) {
+        return secretCache;
+    }
+    try {
+        const response = await secretClient.send(
+            new GetSecretValueCommand({
+                SecretId: process.env.SECRET_NAME,
+                VersionStage: "AWSCURRENT"
+            })
+        );
+        secretCache = response.SecretString;
+        return secretCache;
+    } catch (error) {
+        console.error('Error retrieving secret:', error);
+        throw error;
+    }
 }
 
 let pool;
@@ -45,33 +54,48 @@ export const lambdaHandler = async (event) => {
 
     try {
         const body = JSON.parse(event.body);
-        const { latitude, longitude, radius, title, author, isbn } = body;
-        let page = parseInt(body.page, 10);
+        const { latitude, longitude, radius, title, page: rawPage } = body;
+        let page = parseInt(rawPage, 10);
         if (isNaN(page) || page < 0) page = 0;
 
         const conditions = [];
         const values = [];
         let idx = 1;
 
-        if (latitude && longitude && radius) {
+        const sortByDistance = latitude && longitude && radius;
+        const sortLat = latitude;
+        const sortLong = longitude;
+
+        // Location filter
+        if (sortByDistance) {
             conditions.push(`ST_DWithin(coordinates, ST_MakePoint($${idx++}, $${idx++})::geography, $${idx++})`);
             values.push(longitude, latitude, radius);
         }
 
-        if (title) {
-            conditions.push(`LOWER(title) LIKE $${idx++}`);
-            values.push(`%${title.toLowerCase()}%`);
-        }
-        if (author) {
-            conditions.push(`LOWER(author) LIKE $${idx++}`);
-            values.push(`%${author.toLowerCase()}%`);
-        }
-        if (isbn) {
-            conditions.push(`isbn = $${idx++}`);
-            values.push(isbn);
+        // Fuzzy search: title OR author OR isbn
+        const orConditions = [];
+        if (title && title.trim().length > 0) {
+            const searchTerm = `%${title.toLowerCase()}%`;
+
+            orConditions.push(`LOWER(title) LIKE $${idx}`);
+            values.push(searchTerm);
+            idx++;
+
+            orConditions.push(`LOWER(author) LIKE $${idx}`);
+            values.push(searchTerm);
+            idx++;
+
+            orConditions.push(`LOWER(isbn) LIKE $${idx}`);
+            values.push(searchTerm);
+            idx++;
         }
 
-        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+        // Combine WHERE clause
+        const whereParts = [];
+        if (conditions.length > 0) whereParts.push(...conditions);
+        if (orConditions.length > 0) whereParts.push(`(${orConditions.join(' OR ')})`);
+        const whereClause = whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '';
+
         const limit = 100;
         const offset = page * limit;
 
@@ -79,16 +103,16 @@ export const lambdaHandler = async (event) => {
         const client = await db.connect();
 
         try {
+            // Total count
             let totalCount;
             const now = Date.now();
-
             if (values.length === 0 && cachedCount && cacheTimestamp && now - cacheTimestamp < CACHE_TTL_MS) {
                 totalCount = cachedCount;
             } else {
                 const countQuery = `
                     SELECT COUNT(*) AS total
                     FROM books_index
-                    ${whereClause};
+                             ${whereClause};
                 `;
                 const countResult = await client.query(countQuery, values);
                 totalCount = parseInt(countResult.rows[0].total, 10);
@@ -101,13 +125,31 @@ export const lambdaHandler = async (event) => {
 
             const totalPages = Math.ceil(totalCount / limit);
 
-            const query = `
-                SELECT id
-                FROM books_index
-                ${whereClause}
-                ORDER BY created_at DESC
-                LIMIT ${limit} OFFSET ${offset};
-            `;
+            // Final query with optional distance sort
+            let query;
+            if (sortByDistance) {
+                values.push(sortLong, sortLat);
+                const distLongIdx = idx++;
+                const distLatIdx = idx++;
+
+                query = `
+                    SELECT id,
+                           ST_Distance(coordinates, ST_MakePoint($${distLongIdx}, $${distLatIdx})::geography) AS distance
+                    FROM books_index
+                    ${whereClause}
+                    ORDER BY distance ASC
+                    LIMIT ${limit} OFFSET ${offset};
+                `;
+            } else {
+                query = `
+                    SELECT id
+                    FROM books_index
+                    ${whereClause}
+                    ORDER BY created_at DESC
+                    LIMIT ${limit} OFFSET ${offset};
+                `;
+            }
+
             const result = await client.query(query, values);
 
             return {
@@ -118,7 +160,10 @@ export const lambdaHandler = async (event) => {
                     page,
                     totalPages,
                     count: result.rowCount,
-                    ids: result.rows.map(row => row.id)
+                    results: result.rows.map(row => ({
+                        id: row.id,
+                        ...(row.distance !== undefined && { distance: Math.round(row.distance) })
+                    }))
                 })
             };
         } finally {

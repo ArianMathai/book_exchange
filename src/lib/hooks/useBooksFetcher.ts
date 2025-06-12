@@ -1,4 +1,3 @@
-// lib/hooks/useBooksFetcher.ts
 import { useQuery } from '@tanstack/react-query';
 import {fetchAuthSession} from "aws-amplify/auth";
 
@@ -15,19 +14,21 @@ export interface BookIndexResponse {
     page: number;
     totalPages: number;
     count: number;
-    ids: string[];
+    results: {
+        id: string;
+        distance?: number; // optional, only present if location is included
+    }[];
 }
+
 
 export const fetchBookIds = async (params: SearchParams): Promise<BookIndexResponse> => {
     try {
-        // 1) get the Cognito session and extract the JWT
         const session = await fetchAuthSession();
         const token = session.tokens?.idToken?.toString();
         if (!token) {
             throw new Error('No authentication token available');
         }
 
-        // 2) POST to your new endpoint, passing the Bearer token
         const res = await fetch(import.meta.env.VITE_GET_BOOK_INDEX_ENDPOINT!, {
             method: 'POST',
             headers: {
@@ -47,17 +48,14 @@ export const fetchBookIds = async (params: SearchParams): Promise<BookIndexRespo
             }),
         });
 
-        // 3) any HTTP error? grab a bit more detail
         if (!res.ok) {
             const text = await res.text();
             throw new Error(`Failed to fetch book index (${res.status}): ${text}`);
         }
 
-        // 4) parse & return
         return await res.json();
     } catch (err) {
         console.error('fetchBookIds error:', err);
-        // re-throw so react-query knows it failed
         throw err;
     }
 };

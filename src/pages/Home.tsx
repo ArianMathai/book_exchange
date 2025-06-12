@@ -21,9 +21,8 @@ const Home: React.FC = () => {
 
     const { data, isLoading, error } = useBookIndex(params);
 
-    // log whenever we get new IDs
     useEffect(() => {
-        if (data) console.log('📚 fetched ids:', data.ids);
+        if (data) console.log('📚 fetched results:', data.results);
     }, [data]);
 
     return (
@@ -40,7 +39,17 @@ const Home: React.FC = () => {
                 <div>
                     <p>Page {data.page + 1} of {data.totalPages}</p>
                     <ul>
-                        {data.ids.map(id => <li key={id}>{id}</li>)}
+                        {data.results?.map(book => (
+                            <li key={book.id}>
+                                📘 {book.id}
+                                {book.distance !== undefined && (
+                                    <> – {book.distance >= 1000
+                                        ? `${(book.distance / 1000).toFixed(1)} km`
+                                        : `${book.distance} m`}
+                                    </>
+                                )}
+                            </li>
+                        ))}
                     </ul>
                 </div>
             )}

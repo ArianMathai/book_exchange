@@ -1,7 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  get_book_indexes_dev
+Description: get_book_indexes_dev
+
+Parameters:
+  CognitoUserPoolId:
+    Type: String
+    Default: "eu-north-1_Cpr2QkIBI"
+    Description: Cognito user pool for authentication
 
 Globals:
   Function:
@@ -9,36 +14,30 @@ Globals:
     LoggingConfig:
       LogFormat: JSON
 
-Parameters:
-  CognitoUserPoolId:
-    Type: String
-    Description: Cognito user pool for authentication
-    Default: "eu-north-1_Cpr2QKIBI"
-
 Resources:
+  ##— Your API Gateway definition —##
   GetBooksApi:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Dev
       Cors:
-        AllowMethods: "'POST,OPTIONS'"
-        AllowHeaders: "'Content-Type,Authorization'"
-        AllowOrigin: "'*'"
-        MaxAge: "'600'"
+        AllowMethods:    "'POST,OPTIONS'"
+        AllowHeaders:    "'Content-Type,Authorization'"
+        AllowOrigin:     "'*'"
+        MaxAge:          "'600'"
       Auth:
         DefaultAuthorizer: CognitoAuthorizer
         Authorizers:
           CognitoAuthorizer:
             UserPoolArn: !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}"
 
+  ##— Your Lambda function —##
   GetBooksFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: get_book_indexes_dev/
       Handler: app.lambdaHandler
       Runtime: nodejs22.x
-      Architectures:
-        - x86_64
       Environment:
         Variables:
           SECRET_NAME: "NeonDatabaseUrlDev"
@@ -62,18 +61,51 @@ Resources:
               Authorizer: NONE
       Policies:
         - Statement:
-            - Effect: Allow
-              Action:
-                - secretsmanager:GetSecretValue
-              Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:NeonDatabaseUrlDev-*"
+            Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+            Resource: arn:aws:secretsmanager:eu-north-1:680833125898:secret:NeonDatabaseUrlDev-*
+
+
+
+  ##— CORS for authorizer 401s —##
+  UnauthorizedGatewayResponse:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      ResponseType: UNAUTHORIZED
+      RestApiId:    !Ref GetBooksApi
+      StatusCode:   401
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin:  "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+
+  ##— (Optional) catch-all 4XX so other errors also carry CORS —##
+  Default4xxGatewayResponse:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      ResponseType: DEFAULT_4XX
+      RestApiId:    !Ref GetBooksApi
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin:  "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+
+  Default5xxGatewayResponse:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      RestApiId: !Ref GetBooksApi
+      ResponseType: DEFAULT_5XX
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+
 
 Outputs:
   GetBooksApi:
-    Description: API Gateway endpoint for searching books
+    Description: API Gateway endpoint
     Value: !Sub "https://${GetBooksApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/books/search"
   GetBooksFunction:
-    Description: Lambda function ARN for book search
+    Description: Lambda ARN
     Value: !GetAtt GetBooksFunction.Arn
-  GetBooksFunctionIamRole:
-    Description: IAM Role for Lambda function
-    Value: !GetAtt GetBooksFunctionRole.Arn
