@@ -3,13 +3,11 @@ import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Search } from 'lucide-react';
+import { Search, MapPin, Home } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { getCurrentLocation } from '@/services/getCurrentLocation';
 import {client} from "@/lib/amplifyClient.ts";
 import {fetchUserAttributes} from "aws-amplify/auth";
-
-// TODO: Add endpoint to pg search query as env to amplify console
 
 interface SearchBarProps {
     onSearch: (params: {
@@ -25,8 +23,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
     const [tempRadius, setTempRadius] = useState<number>(10);
     const [useCurrentLocation, setUseCurrentLocation] = useState(true);
     const [homeCoords, setHomeCoords] = useState<{ latitude: number; longitude: number } | null>(null);
-
-
+    const [enableDistance, setEnableDistance] = useState<boolean>(true);
 
     useEffect(() => {
         const fetchUserCoordinates = async () => {
@@ -57,6 +54,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
 
         fetchUserCoordinates();
     }, []);
+
     const handleSearch = async () => {
         let coords = null;
         if (useCurrentLocation) {
@@ -67,7 +65,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
 
         onSearch({
             query,
-            radius: tempRadius,
+            radius: enableDistance ? tempRadius * 1000 : null,
             latitude: coords?.latitude,
             longitude: coords?.longitude,
         });
@@ -81,47 +79,86 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
 
     return (
         <div className="w-full max-w-4xl mx-auto">
-            <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl p-6 shadow-lg shadow-gray-100/50 space-y-6">
-                <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <Input
-                        placeholder="Search by title, author, or ISBN..."
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        onKeyDown={handleKeyPress}
-                        className="h-10 text-lg border-0 bg-gray-50/50 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 flex-1"
-                    />
+            <div className="bg-white/90 backdrop-blur-md border border-gray-200/60 rounded-2xl p-6 shadow-lg space-y-5">
+                {/* Main Search Input */}
+                <div className="flex gap-3">
+                    <div className="relative flex-1">
+                        <Input
+                            placeholder="Search books by title, author, or ISBN..."
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            onKeyDown={handleKeyPress}
+                            className="h-12 text-base pl-4 pr-4 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+                        />
+                    </div>
                     <Button
                         onClick={handleSearch}
-                        className="h-10 px-6 bg-gradient-to-r from-blue-300 to-blue-400 hover:from-blue-500 hover:to-blue-600 cursor-pointer rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
+                        className="h-12 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 font-medium"
                     >
                         <Search className="w-4 h-4 mr-2" />
                         Search
                     </Button>
                 </div>
 
-                <div className="flex items-center justify-between gap-6 flex-wrap">
-                    <div className="flex items-center gap-4 flex-1">
-                        <span className="text-sm font-medium text-gray-600 min-w-fit">Search radius</span>
-                        <div className="flex-1 max-w-xs">
-                            <Slider
-                                min={1}
-                                max={20}
-                                step={1}
-                                value={[tempRadius]}
-                                onValueChange={([value]) => setTempRadius(value)}
-                                className="cursor-pointer"
-                            />
-                        </div>
-                        <div className="min-w-fit">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                {tempRadius} km
-              </span>
-                        </div>
-                    </div>
+                {/* Distance and Location Filters */}
+                <div className="border-t border-gray-100 pt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Distance Filter */}
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-medium text-gray-700">
+                                    Search by distance
+                                </h3>
+                                <Switch
+                                    checked={enableDistance}
+                                    onCheckedChange={setEnableDistance}
+                                />
+                            </div>
 
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Use current location</span>
-                        <Switch checked={useCurrentLocation} onCheckedChange={setUseCurrentLocation} />
+                            {enableDistance && (
+                                <div className="p-3 bg-gray-50 rounded-lg space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm text-gray-600">Within</span>
+                                        <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                                            {tempRadius} km
+                                        </span>
+                                    </div>
+                                    <Slider
+                                        min={1}
+                                        max={20}
+                                        step={1}
+                                        value={[tempRadius]}
+                                        onValueChange={([value]) => setTempRadius(value)}
+                                        className="cursor-pointer"
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Location Selection - Only shown when distance filter is enabled */}
+                        {enableDistance && (
+                            <div className="space-y-3">
+                                <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                    Where are you..
+                                </h3>
+                                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div className="flex items-center gap-2">
+                                        {useCurrentLocation ? (
+                                            <MapPin className="w-4 h-4 text-blue-600" />
+                                        ) : (
+                                            <Home className="w-4 h-4 text-green-600" />
+                                        )}
+                                        <span className="text-sm text-gray-700">
+                                            {useCurrentLocation ? 'Current location' : 'Home address'}
+                                        </span>
+                                    </div>
+                                    <Switch
+                                        checked={useCurrentLocation}
+                                        onCheckedChange={setUseCurrentLocation}
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

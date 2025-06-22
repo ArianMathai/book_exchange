@@ -1,6 +1,6 @@
 // Book interface
 export interface BookType {
-    id?: string;
+    id: string;
     ownerEmail: string;
     title: string;
     author: string;
@@ -15,5 +15,6 @@ export interface BookType {
 // Book Card Component
 export interface BookCardProps {
     book: BookType;
+    distance?: number;
     className?: string;
 }

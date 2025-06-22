@@ -39,8 +39,6 @@ export const fetchBookIds = async (params: SearchParams): Promise<BookIndexRespo
                 page: params.page,
                 ...(params.query && { title: params.query, author: params.query, isbn: params.query }),
                 ...(params.radius && params.latitude != null && params.longitude != null && {
-                    // if your Lambda expects meters, multiply here:
-                    // radius: params.radius * 1000,
                     radius: params.radius,
                     latitude: params.latitude,
                     longitude: params.longitude,

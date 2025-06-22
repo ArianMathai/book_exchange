@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { BookCardProps } from "@/components/book/bookTypes.ts";
 import { getUrl } from "aws-amplify/storage";
 
-const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
+const BookCard: React.FC<BookCardProps> = ({ book, className, distance }) => {
 
     const [imageLoading, setImageLoading] = useState(book.imageUrl ? true : false);
     const [imageError, setImageError] = useState(false);
@@ -189,11 +189,17 @@ const BookCard: React.FC<BookCardProps> = ({ book, className }) => {
                     <div className="mt-auto">
                         <Separator />
                         <CardFooter className="pt-3 sm:pt-4">
-                            <div className="flex items-center justify-between w-full min-w-0">
+                            <div className="flex items-center justify-between w-full min-w-0 flex-wrap gap-2">
                                 <div className="flex items-center text-xs text-slate-500 min-w-0">
                                     <Book className="w-2.5 sm:w-3 h-2.5 sm:h-3 mr-1 flex-shrink-0" />
                                     <span className="truncate">{book.ownerEmail}</span>
                                 </div>
+
+                                {typeof distance === 'number' && (
+                                    <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+                                        📍 {distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${distance} m`} away
+                                    </span>
+                                )}
                             </div>
                         </CardFooter>
                     </div>

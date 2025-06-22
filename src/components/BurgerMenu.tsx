@@ -207,7 +207,7 @@ const BurgerMenu: React.FC = () => {
                                 </div>
 
                                 {/* Footer with Sign Out */}
-                                <div className="px-6 py-6 border-t border-emerald-800/30 bg-emerald-950/30 backdrop-blur-sm">
+                                <div className="px-6 py-4 sm:py-6 border-t border-emerald-800/30 bg-emerald-950/30 backdrop-blur-sm">
                                     <Button
                                         variant="ghost"
                                         size="lg"
@@ -227,7 +227,7 @@ const BurgerMenu: React.FC = () => {
                                         </div>
                                     </Button>
 
-                                    <div className="mt-4 pt-4 border-t border-white-800/20">
+                                    <div className="mt-2 pt-2 border-t border-white-800/20">
                                         <p className="text-center text-emerald-400/60 text-xs">
                                             Made with ❤️ for book lovers
                                         </p>
