@@ -25,9 +25,30 @@ export const fetchBookIds = async (params: SearchParams): Promise<BookIndexRespo
     try {
         const session = await fetchAuthSession();
         const token = session.tokens?.idToken?.toString();
+
         if (!token) {
             throw new Error('No authentication token available');
         }
+
+        // Prepare request body
+        const body = {
+            page: params.page,
+            ...(params.query && {
+                title: params.query,
+                author: params.query,
+                isbn: params.query,
+            }),
+            ...(params.radius != null &&
+                params.radius > 0 &&
+                params.latitude != null &&
+                params.longitude != null && {
+                    radius: params.radius,
+                    latitude: params.latitude,
+                    longitude: params.longitude,
+                }),
+        };
+
+        console.log('📦 Sending search body to Lambda:', body);
 
         const res = await fetch(import.meta.env.VITE_GET_BOOK_INDEX_ENDPOINT!, {
             method: 'POST',
@@ -35,15 +56,7 @@ export const fetchBookIds = async (params: SearchParams): Promise<BookIndexRespo
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify({
-                page: params.page,
-                ...(params.query && { title: params.query, author: params.query, isbn: params.query }),
-                ...(params.radius && params.latitude != null && params.longitude != null && {
-                    radius: params.radius,
-                    latitude: params.latitude,
-                    longitude: params.longitude,
-                })
-            }),
+            body: JSON.stringify(body),
         });
 
         if (!res.ok) {
@@ -53,10 +66,11 @@ export const fetchBookIds = async (params: SearchParams): Promise<BookIndexRespo
 
         return await res.json();
     } catch (err) {
-        console.error('fetchBookIds error:', err);
+        console.error('❌ fetchBookIds error:', err);
         throw err;
     }
 };
+
 
 export const useBookIndex = (params: SearchParams) =>
     useQuery({

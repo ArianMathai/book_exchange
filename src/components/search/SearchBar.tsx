@@ -57,17 +57,18 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
 
     const handleSearch = async () => {
         let coords = null;
-        if (useCurrentLocation) {
-            coords = await getCurrentLocation();
-        } else {
-            coords = homeCoords;
+
+        if (enableDistance) {
+            coords = useCurrentLocation
+                ? await getCurrentLocation()
+                : homeCoords;
         }
 
         onSearch({
             query,
             radius: enableDistance ? tempRadius * 1000 : null,
-            latitude: coords?.latitude,
-            longitude: coords?.longitude,
+            latitude: enableDistance ? coords?.latitude : undefined,
+            longitude: enableDistance ? coords?.longitude : undefined,
         });
     };
 

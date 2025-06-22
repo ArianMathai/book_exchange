@@ -46,38 +46,40 @@ const PaginationControls: React.FC<Props> = ({ page, setPage, totalPages }) => {
     };
 
     return (
-        <Pagination>
-            <PaginationContent>
-                <PaginationItem>
-                    <PaginationPrevious
-                        onClick={() => goToPage(page - 1)}
-                        className={page === 0 ? "pointer-events-none opacity-50" : ""}
-                    />
-                </PaginationItem>
-
-                {pageNumbers.map((p, idx) => (
-                    <PaginationItem key={idx}>
-                        {p === "..." ? (
-                            <PaginationEllipsis />
-                        ) : (
-                            <PaginationLink
-                                isActive={p === page}
-                                onClick={() => goToPage(p as number)}
-                            >
-                                {(p as number) + 1}
-                            </PaginationLink>
-                        )}
+        <div className="pt-6">
+            <Pagination>
+                <PaginationContent>
+                    <PaginationItem>
+                        <PaginationPrevious
+                            onClick={() => goToPage(page - 1)}
+                            className={page === 0 ? "pointer-events-none opacity-50" : ""}
+                        />
                     </PaginationItem>
-                ))}
 
-                <PaginationItem>
-                    <PaginationNext
-                        onClick={() => goToPage(page + 1)}
-                        className={page === totalPages - 1 ? "pointer-events-none opacity-50" : ""}
-                    />
-                </PaginationItem>
-            </PaginationContent>
-        </Pagination>
+                    {pageNumbers.map((p, idx) => (
+                        <PaginationItem key={idx}>
+                            {p === "..." ? (
+                                <PaginationEllipsis />
+                            ) : (
+                                <PaginationLink
+                                    isActive={p === page}
+                                    onClick={() => goToPage(p as number)}
+                                >
+                                    {(p as number) + 1}
+                                </PaginationLink>
+                            )}
+                        </PaginationItem>
+                    ))}
+
+                    <PaginationItem>
+                        <PaginationNext
+                            onClick={() => goToPage(page + 1)}
+                            className={page === totalPages - 1 ? "pointer-events-none opacity-50" : ""}
+                        />
+                    </PaginationItem>
+                </PaginationContent>
+            </Pagination>
+        </div>
     );
 };
 
