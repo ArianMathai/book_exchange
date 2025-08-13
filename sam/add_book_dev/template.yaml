@@ -46,6 +46,7 @@ Resources:
         Variables:
           SECRET_NAME: "NeonDatabaseUrlDev"
           REGION: "eu-north-1"
+          OWNER_ID_FIELD: "owner_id"
       Events:
         # POST request with authentication
         AddBook:

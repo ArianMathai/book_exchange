@@ -6,11 +6,7 @@ interface BookData {
     title: string;
     author: string;
     isbn?: string | null;
-}
-
-export interface Coordinates {
-    latitude: number;
-    longitude: number;
+    ownerId: string;
 }
 
 interface IndexedBook {
@@ -19,8 +15,7 @@ interface IndexedBook {
     author: string;
     isbn: string | null;
     created_at: string;
-    longitude?: number;
-    latitude?: number;
+    owner_id?: string;
 }
 
 interface IndexResponse {
@@ -32,8 +27,7 @@ const endpoint = import.meta.env.VITE_ADD_BOOK_ENDPOINT;
 
 // Function to add book to the index database via Lambda
 export const addBookToIndex = async (
-    bookData: BookData,
-    coordinates: Coordinates | null = null
+    bookData: BookData
 ): Promise<IndexResponse> => {
     try {
         // Get the current auth session to retrieve the JWT token
@@ -50,10 +44,7 @@ export const addBookToIndex = async (
             title: bookData.title,
             author: bookData.author,
             isbn: bookData.isbn || null,
-            ...(coordinates && {
-                longitude: coordinates.longitude,
-                latitude: coordinates.latitude
-            })
+            ownerId: bookData.ownerId
         };
 
         console.log('📤 Sending book to index:', payload);

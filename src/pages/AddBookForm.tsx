@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button.tsx';
 import { Input } from '@/components/ui/input.tsx';
@@ -121,7 +121,7 @@ const AddBookForm: React.FC = () => {
                 window.clearTimeout(searchTimerRef.current);
             }
         };
-    }, [formData.isbn, formData.title, formData.author]);
+    }, [formData, imageSource, searchBookImage]);
 
     // Effect to handle suggestions when title or author changes
     useEffect(() => {
@@ -150,10 +150,10 @@ const AddBookForm: React.FC = () => {
                 window.clearTimeout(suggestionTimerRef.current);
             }
         };
-    }, [formData.title, formData.author, activeSuggestionField]);
+    }, [formData, activeSuggestionField, searchSuggestions]);
 
     // Function to search for book suggestions
-    const searchSuggestions = async () => {
+    const searchSuggestions = useCallback(async () => {
 
         const { title, author } = formData;
 
@@ -183,10 +183,10 @@ const AddBookForm: React.FC = () => {
         } finally {
             setIsLoadingSuggestions(false);
         }
-    };
+    }, [formData]);
 
     // Function to search for book image using Google Books API
-    const searchBookImage = async () => {
+    const searchBookImage = useCallback(async () => {
         try {
             setIsSearchingImage(true);
             const { isbn, title, author } = formData;
@@ -214,7 +214,7 @@ const AddBookForm: React.FC = () => {
         } finally {
             setIsSearchingImage(false);
         }
-    };
+    }, [formData, imageSource]);
 
     // Handle suggestion selection
     const handleSuggestionSelect = (suggestion: BookSuggestion) => {
@@ -442,28 +442,14 @@ const AddBookForm: React.FC = () => {
 
             // After successful creation, add to index database
             try {
-
-                //Get user's location for the index
-                const userRecord = await client.models.User.get({ sub });
-
-                if (!userRecord?.data?.coordinates) {
-                    throw new Error('User coordinates not found. Please set your location first.');
-                }
-
-                const coordinates = {
-                    latitude: userRecord.data.coordinates.lat,
-                    longitude: userRecord.data.coordinates.long
-                };
-                console.log("Coords: ", coordinates);
-
-
                 // Add book to the index database using the same ID
                 await addBookToIndex({
                     id: res.data.id,
                     title: bookData.title,
                     author: bookData.author,
-                    isbn: bookData.isbn
-                }, coordinates);
+                    isbn: bookData.isbn,
+                    ownerId: sub
+                });
 
                 console.log('✅ Book successfully added to both databases');
             } catch (indexError) {
