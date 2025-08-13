@@ -16,10 +16,10 @@ import {
     Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils.ts';
-import { client} from "@/lib/amplifyClient.ts";
+import { client } from "@/lib/amplifyClient.ts";
 import { fetchUserAttributes } from "aws-amplify/auth";
 import { findBookCover, searchCombinedSuggestions, BookSuggestion } from '@/services/googleBooksApi';
-import {addBookToIndex} from "@/services/addBookToIndex.ts";
+import { addBookToIndex } from "@/services/addBookToIndex.ts";
 import SuccessMessage from "@/components/add-book-form/SuccessMessage.tsx";
 import FormInputField from "@/components/add-book-form/FormInputField.tsx";
 import BookSuggestionsDropdown from "@/components/add-book-form/BookSuggestionsDropdown.tsx";
@@ -38,13 +38,13 @@ interface FormErrors {
     title?: string;
     author?: string;
     isbn?: string;
-    ownerId?: string;
     image?: string;
+    /** General, non-field-specific message (warnings/errors) */
+    message?: string;
 }
 
 // Image source type
 type ImageSource = 'manual' | 'google_books' | null;
-
 
 const AddBookForm: React.FC = () => {
     const navigate = useNavigate();
@@ -87,7 +87,69 @@ const AddBookForm: React.FC = () => {
     const skipNextImageSearchRef = useRef(false);
     const lastSuggestionQueryRef = useRef<{ title: string; author: string } | null>(null);
 
+    // ---- callbacks declared BEFORE effects ----
 
+    // Function to search for book suggestions
+    const searchSuggestions = useCallback(async () => {
+        const { title, author } = formData;
+
+        // Skip if this exact query was just made
+        if (
+            lastSuggestionQueryRef.current &&
+            lastSuggestionQueryRef.current.title === title &&
+            lastSuggestionQueryRef.current.author === author
+        ) {
+            return;
+        }
+
+        try {
+            setIsLoadingSuggestions(true);
+            const results = await searchCombinedSuggestions(title, author, 8); // limit 40
+            setSuggestions(results);
+            setShowSuggestions(results.length > 0);
+            setSelectedSuggestionIndex(-1);
+            lastSuggestionQueryRef.current = { title, author };
+        } catch (error) {
+            console.error('Error searching for suggestions:', error);
+            setSuggestions([]);
+            setShowSuggestions(false);
+        } finally {
+            setIsLoadingSuggestions(false);
+        }
+    }, [formData]);
+
+    // Function to search for book image using Google Books API
+    const searchBookImage = useCallback(async () => {
+        try {
+            setIsSearchingImage(true);
+            const { isbn, title, author } = formData;
+
+            // Only search if we have ISBN or both title and author
+            if (!isbn && (!title || !author)) {
+                setIsSearchingImage(false);
+                return;
+            }
+
+            const coverUrl = await findBookCover(isbn, title, author);
+
+            if (coverUrl) {
+                setGoogleBooksImage(coverUrl);
+                setImageSource('google_books');
+            } else {
+                setGoogleBooksImage(null);
+                // Only clear image source if it was 'google_books'
+                if (imageSource === 'google_books') {
+                    setImageSource(null);
+                }
+            }
+        } catch (error) {
+            console.error('Error searching for book image:', error);
+        } finally {
+            setIsSearchingImage(false);
+        }
+    }, [formData, imageSource]);
+
+    // ---- effects ----
 
     // Effect to search for book cover when ISBN or title+author changes
     useEffect(() => {
@@ -152,69 +214,7 @@ const AddBookForm: React.FC = () => {
         };
     }, [formData, activeSuggestionField, searchSuggestions]);
 
-    // Function to search for book suggestions
-    const searchSuggestions = useCallback(async () => {
-
-        const { title, author } = formData;
-
-        // Skip if this exact query was just made
-        if (
-            lastSuggestionQueryRef.current &&
-            lastSuggestionQueryRef.current.title === title &&
-            lastSuggestionQueryRef.current.author === author
-        ) {
-            return;
-        }
-
-        try {
-            setIsLoadingSuggestions(true);
-
-            const results = await searchCombinedSuggestions(title, author, 8); // change maxResults to get more book suggestions (limit is 40)
-            setSuggestions(results);
-            setShowSuggestions(results.length > 0);
-            setSelectedSuggestionIndex(-1);
-
-            // Save the current query
-            lastSuggestionQueryRef.current = { title, author };
-        } catch (error) {
-            console.error('Error searching for suggestions:', error);
-            setSuggestions([]);
-            setShowSuggestions(false);
-        } finally {
-            setIsLoadingSuggestions(false);
-        }
-    }, [formData]);
-
-    // Function to search for book image using Google Books API
-    const searchBookImage = useCallback(async () => {
-        try {
-            setIsSearchingImage(true);
-            const { isbn, title, author } = formData;
-
-            // Only search if we have ISBN or both title and author
-            if (!isbn && (!title || !author)) {
-                setIsSearchingImage(false);
-                return;
-            }
-
-            const coverUrl = await findBookCover(isbn, title, author);
-
-            if (coverUrl) {
-                setGoogleBooksImage(coverUrl);
-                setImageSource('google_books');
-            } else {
-                setGoogleBooksImage(null);
-                // Only clear image source if it was 'google_books'
-                if (imageSource === 'google_books') {
-                    setImageSource(null);
-                }
-            }
-        } catch (error) {
-            console.error('Error searching for book image:', error);
-        } finally {
-            setIsSearchingImage(false);
-        }
-    }, [formData, imageSource]);
+    // ---- handlers ----
 
     // Handle suggestion selection
     const handleSuggestionSelect = (suggestion: BookSuggestion) => {
@@ -238,7 +238,7 @@ const AddBookForm: React.FC = () => {
         setActiveSuggestionField(null);
         setSuggestions([]);
 
-        // Clear any errors
+        // Clear any field errors
         setErrors(prev => ({
             ...prev,
             title: undefined,
@@ -386,17 +386,17 @@ const AddBookForm: React.FC = () => {
 
             if (!sub) {
                 console.error('❌ Missing user sub (Cognito ID)');
-                setErrors(prev => ({ ...prev, owner: 'User authentication error' }));
+                setErrors(prev => ({ ...prev, message: 'User authentication error' }));
                 return;
             }
             if (!ownerEmail) {
                 console.error('❌ Missing user email');
-                setErrors(prev => ({ ...prev, owner: 'User email not found' }));
+                setErrors(prev => ({ ...prev, message: 'User email not found' }));
                 return;
             }
 
             // Prepare image data
-            let imageUrl = null;
+            let imageUrl: string | null = null;
 
             try {
                 if (imageSource === 'manual' && uploadedS3Key) {
@@ -454,13 +454,12 @@ const AddBookForm: React.FC = () => {
                 console.log('✅ Book successfully added to both databases');
             } catch (indexError) {
                 // Log the error but don't fail the entire operation
-                // The book was successfully created in the main database
                 console.warn('⚠️ Book created in main database but failed to add to index:', indexError);
 
-                // Optionally show a warning to the user
+                // Show a general warning to the user
                 setErrors(prev => ({
                     ...prev,
-                    index: 'Book saved but may not appear in public search immediately'
+                    message: 'Book saved but may not appear in public search immediately'
                 }));
             }
 
@@ -475,7 +474,7 @@ const AddBookForm: React.FC = () => {
             console.error('Error creating book:', error);
             setErrors(prev => ({
                 ...prev,
-                owner: 'Failed to save book. Please try again.'
+                message: 'Failed to save book. Please try again.'
             }));
         } finally {
             setIsSubmitting(false);
@@ -656,10 +655,11 @@ const AddBookForm: React.FC = () => {
                                 </Button>
                             </div>
 
-                            {errors.ownerId && (
-                                <div className="flex items-center text-sm text-red-600 mt-4 p-3 bg-red-50 rounded-md border border-red-100">
+                            {/* General (non-field) message */}
+                            {errors.message && (
+                                <div className="flex items-center text-sm text-amber-700 mt-4 p-3 bg-amber-50 rounded-md border border-amber-100">
                                     <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />
-                                    <span>{errors.ownerId}</span>
+                                    <span>{errors.message}</span>
                                 </div>
                             )}
                         </form>
@@ -673,4 +673,3 @@ const AddBookForm: React.FC = () => {
 };
 
 export default AddBookForm;
-
