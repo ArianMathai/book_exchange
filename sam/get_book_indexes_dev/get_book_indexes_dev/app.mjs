@@ -61,6 +61,7 @@ export const lambdaHandler = async (event) => {
         const conditions = [];
         const values = [];
         let idx = 1;
+        let joinClause = '';
 
         const sortByDistance = latitude && longitude && radius;
         const sortLat = latitude;
@@ -68,7 +69,8 @@ export const lambdaHandler = async (event) => {
 
         // Location filter
         if (sortByDistance) {
-            conditions.push(`ST_DWithin(coordinates, ST_MakePoint($${idx++}, $${idx++})::geography, $${idx++})`);
+            joinClause = 'JOIN user_index u ON b.owner_id = u.id';
+            conditions.push(`ST_DWithin(u.coordinates, ST_MakePoint($${idx++}, $${idx++})::geography, $${idx++})`);
             values.push(longitude, latitude, radius);
         }
 
@@ -77,15 +79,15 @@ export const lambdaHandler = async (event) => {
         if (title && title.trim().length > 0) {
             const searchTerm = `%${title.toLowerCase()}%`;
 
-            orConditions.push(`LOWER(title) LIKE $${idx}`);
+            orConditions.push(`LOWER(b.title) LIKE $${idx}`);
             values.push(searchTerm);
             idx++;
 
-            orConditions.push(`LOWER(author) LIKE $${idx}`);
+            orConditions.push(`LOWER(b.author) LIKE $${idx}`);
             values.push(searchTerm);
             idx++;
 
-            orConditions.push(`LOWER(isbn) LIKE $${idx}`);
+            orConditions.push(`LOWER(b.isbn) LIKE $${idx}`);
             values.push(searchTerm);
             idx++;
         }
@@ -111,8 +113,9 @@ export const lambdaHandler = async (event) => {
             } else {
                 const countQuery = `
                     SELECT COUNT(*) AS total
-                    FROM books_index
-                             ${whereClause};
+                    FROM books_index b
+                    ${joinClause}
+                    ${whereClause};
                 `;
                 const countResult = await client.query(countQuery, values);
                 totalCount = parseInt(countResult.rows[0].total, 10);
@@ -133,19 +136,20 @@ export const lambdaHandler = async (event) => {
                 const distLatIdx = idx++;
 
                 query = `
-                    SELECT id,
-                           ST_Distance(coordinates, ST_MakePoint($${distLongIdx}, $${distLatIdx})::geography) AS distance
-                    FROM books_index
+                    SELECT b.id,
+                           ST_Distance(u.coordinates, ST_MakePoint($${distLongIdx}, $${distLatIdx})::geography) AS distance
+                    FROM books_index b
+                    JOIN user_index u ON b.owner_id = u.id
                     ${whereClause}
                     ORDER BY distance ASC
                     LIMIT ${limit} OFFSET ${offset};
                 `;
             } else {
                 query = `
-                    SELECT id
-                    FROM books_index
+                    SELECT b.id
+                    FROM books_index b
                     ${whereClause}
-                    ORDER BY created_at DESC
+                    ORDER BY b.created_at DESC
                     LIMIT ${limit} OFFSET ${offset};
                 `;
             }
