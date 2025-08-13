@@ -1,5 +1,9 @@
 // Optional: Function to get user's current location
-import {Coordinates} from "@/services/addBookToIndex.ts";
+
+interface Coordinates {
+    latitude: number;
+    longitude: number;
+}
 
 export const getCurrentLocation = (): Promise<Coordinates | null> => {
     return new Promise<Coordinates | null>((resolve, reject) => {
