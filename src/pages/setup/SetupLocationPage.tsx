@@ -9,10 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AlertCircle, LocateFixed, Save, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { getCurrentLocation } from '@/services/getCurrentLocation';
+import { upsertUserLocation } from '@/services/upsertUserLocation';
 import { fetchUserAttributes } from 'aws-amplify/auth';
 import { client } from '@/lib/amplifyClient';
-import {reverseGeocode, loadGoogleMapsScript, fetchGoogleMapsKey} from '@/services/googleMapsApi';
-
+import { reverseGeocode, loadGoogleMapsScript, fetchGoogleMapsKey } from '@/services/googleMapsApi';
 
 const SetupLocationPage = () => {
     const navigate = useNavigate();
@@ -32,8 +32,6 @@ const SetupLocationPage = () => {
 
     // Cache api key
     const googleMapsKeyRef = useRef<string | null>(null);
-
-
 
     const initAutocomplete = () => {
         if (!window.google || !addressInputRef.current) return;
@@ -97,7 +95,6 @@ const SetupLocationPage = () => {
 
         return () => clearInterval(waitForGoogle);
     }, []);
-
 
     const autofillWithCurrentLocation = async () => {
         setIsFetchingLocation(true);
@@ -168,12 +165,20 @@ const SetupLocationPage = () => {
                 console.log('✅ User created:', result);
             }
 
-
             if (!result?.data) {
                 throw new Error('❌ Failed to save user');
             }
-
-
+            if (formData.latitude && formData.longitude) {
+                try {
+                    await upsertUserLocation({
+                        userId: sub,
+                        longitude: parseFloat(formData.longitude),
+                        latitude: parseFloat(formData.latitude)
+                    });
+                } catch (err) {
+                    console.error('Failed to upsert user location:', err);
+                }
+            }
 
             navigate('/library');
         } catch (err) {
@@ -183,7 +188,6 @@ const SetupLocationPage = () => {
             setIsSubmitting(false);
         }
     };
-
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50 py-10 px-4">

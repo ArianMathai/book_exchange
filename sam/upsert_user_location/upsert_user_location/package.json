@@ -1,0 +1,15 @@
+{
+  "name": "upsert_user_location",
+  "version": "1.0.0",
+  "description": "Lambda to upsert user location",
+  "main": "app.mjs",
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "pg": "^8.11.3"
+  },
+  "scripts": {
+    "test": "mocha tests/unit/"
+  },
+  "devDependencies": {}
+}
