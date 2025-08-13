@@ -1,0 +1,10 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "upsert-user-location-prod"
+resolve_s3 = true
+s3_prefix = "upsert-user-location-prod"
+region = "eu-north-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "CognitoUserPoolId=\"eu-north-1_ncYQOqnAD\""
+image_repositories = []
