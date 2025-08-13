@@ -11,12 +11,13 @@ frontend:
       commands:
         - echo "VITE_ADD_BOOK_ENDPOINT=$VITE_ADD_BOOK_ENDPOINT" >> .env
         - echo "VITE_GET_BOOK_INDEX_ENDPOINT=$VITE_GET_BOOK_INDEX_ENDPOINT" >> .env
+        - echo "VITE_UPSERT_USER_LOCATION_ENDPOINT=$VITE_UPSERT_USER_LOCATION_ENDPOINT" >> .env
         - npm run build
   artifacts:
     baseDirectory: dist
     files:
       - '**/*'
-  cache:
-    paths:
-      - .npm/**/*
-      - node_modules/**/*
+    cache:
+      paths:
+        - .npm/**/*
+        - node_modules/**/*
