@@ -1,5 +1,5 @@
 {
-  "name": "upsert_user_location",
+  "name": "upsert_user_location_dev",
   "version": "1.0.0",
   "description": "Lambda to upsert user location",
   "main": "app.mjs",

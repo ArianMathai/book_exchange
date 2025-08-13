@@ -34,7 +34,7 @@ Resources:
   AddBookFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: add_book_prod/  # <-- Make sure your prod code is in this folder
+      CodeUri: add_book_prod/
       Handler: app.lambdaHandler
       Runtime: nodejs22.x
       Architectures:

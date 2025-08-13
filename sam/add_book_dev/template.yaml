@@ -15,7 +15,7 @@ Parameters:
   CognitoUserPoolId:
     Type: String
     Description: The ID of the existing Cognito User Pool from Amplify
-    Default: "eu-north-1_Cpr2QKIBI"
+    Default: "eu-north-1_Cpr2QkIBI"
 
 Resources:
   # Explicitly define the API Gateway
