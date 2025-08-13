@@ -43,6 +43,7 @@ Resources:
         Variables:
           SECRET_NAME: "NeonDatabaseUrlProd"
           REGION: "eu-north-1"
+          OWNER_ID_FIELD: "owner_id"
       Events:
         AddBook:
           Type: Api

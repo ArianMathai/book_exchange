@@ -1,5 +1,5 @@
 {
-  "body": "{\"message\": \"hello world\"}",
+  "body": "{\"id\":\"1\",\"title\":\"Example\",\"author\":\"Author\",\"isbn\":\"123\",\"ownerId\":\"owner-123\"}",
   "resource": "/{proxy+}",
   "path": "/path/to/resource",
   "httpMethod": "POST",

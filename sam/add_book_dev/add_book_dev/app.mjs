@@ -45,6 +45,8 @@ async function getPool() {
     return pool;
 }
 
+const OWNER_ID_FIELD = process.env.OWNER_ID_FIELD || 'owner_id';
+
 export const lambdaHandler = async (event) => {
     // Add CORS headers
     const corsHeaders = {
@@ -67,78 +69,28 @@ export const lambdaHandler = async (event) => {
     try {
         // Parse the incoming POST request body
         const body = JSON.parse(event.body);
-        const { id, title, author, isbn, longitude, latitude } = body;
+        const { id, title, author, isbn, ownerId } = body;
 
         // Validate required fields
-        if (!id || !title || !author) {
+        if (!id || !title || !author || !ownerId) {
             return {
                 statusCode: 400,
                 headers: corsHeaders,
                 body: JSON.stringify({
-                    message: 'Missing required fields: id, title, and author are required'
+                    message: 'Missing required fields: id, title, author, and ownerId are required'
                 })
             };
-        }
-
-        // Validate coordinates if provided
-        if ((longitude !== undefined && latitude === undefined) ||
-            (longitude === undefined && latitude !== undefined)) {
-            return {
-                statusCode: 400,
-                headers: corsHeaders,
-                body: JSON.stringify({
-                    message: 'Both longitude and latitude must be provided together'
-                })
-            };
-        }
-
-        // Validate coordinate ranges
-        if (longitude !== undefined && latitude !== undefined) {
-            if (longitude < -180 || longitude > 180) {
-                return {
-                    statusCode: 400,
-                    headers: corsHeaders,
-                    body: JSON.stringify({
-                        message: 'Longitude must be between -180 and 180'
-                    })
-                };
-            }
-            if (latitude < -90 || latitude > 90) {
-                return {
-                    statusCode: 400,
-                    headers: corsHeaders,
-                    body: JSON.stringify({
-                        message: 'Latitude must be between -90 and 90'
-                    })
-                };
-            }
         }
 
         // Get the connection pool and insert data
         const pool = await getPool();
 
-        // Build query based on whether coordinates are provided
-        let query, values;
-
-        if (longitude !== undefined && latitude !== undefined) {
-            // Insert with coordinates using PostGIS ST_Point function
-            query = `
-                INSERT INTO books_index (id, title, author, isbn, coordinates)
-                VALUES ($1, $2, $3, $4, ST_Point($5, $6)::geography)
-                RETURNING id, title, author, isbn, created_at, 
-                         ST_X(coordinates::geometry) as longitude, 
-                         ST_Y(coordinates::geometry) as latitude;
+        const query = `
+                INSERT INTO books_index (id, title, author, isbn, ${OWNER_ID_FIELD})
+                VALUES ($1, $2, $3, $4, $5)
+                RETURNING id, title, author, isbn, ${OWNER_ID_FIELD} as owner_id, created_at;
             `;
-            values = [id, title, author, isbn || null, longitude, latitude];
-        } else {
-            // Insert without coordinates
-            query = `
-                INSERT INTO books_index (id, title, author, isbn)
-                VALUES ($1, $2, $3, $4)
-                RETURNING id, title, author, isbn, created_at;
-            `;
-            values = [id, title, author, isbn || null];
-        }
+        const values = [id, title, author, isbn || null, ownerId];
 
         const client = await pool.connect();
         try {
