@@ -18,12 +18,16 @@ interface SearchBarProps {
     }) => void;
 }
 
+//TODO: change locations of all books in book_index when user changes home address
+//TODO: Make Book cards clickable -> takes you to the books page.
+//TODO: Work out how loaning function should work
+
 const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
     const [query, setQuery] = useState('');
     const [tempRadius, setTempRadius] = useState<number>(10);
     const [useCurrentLocation, setUseCurrentLocation] = useState(true);
     const [homeCoords, setHomeCoords] = useState<{ latitude: number; longitude: number } | null>(null);
-    const [enableDistance, setEnableDistance] = useState<boolean>(true);
+    const [enableDistance, setEnableDistance] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchUserCoordinates = async () => {
@@ -108,7 +112,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
                                 <h3 className="text-sm font-medium text-gray-700">
-                                    Search by distance
+                                    Distance filter
                                 </h3>
                                 <Switch
                                     checked={enableDistance}

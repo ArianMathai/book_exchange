@@ -90,7 +90,9 @@ const Home: React.FC = () => {
 
             {data && (
                 <div>
-                    <p>Page {data.page + 1} of {data.totalPages}</p>
+                    <p className="text-center text-sm font-medium text-gray-700 bg-white px-2 py-1 rounded-lg shadow-sm border mx-auto w-fit mb-6">
+                        Page {data.page + 1} of {data.totalPages}
+                    </p>
                     <ul className="space-y-4">
                         {booksWithDistance.map((book) => (
                             <li key={book.id}>
