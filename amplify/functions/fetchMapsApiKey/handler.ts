@@ -14,8 +14,6 @@ export const handler: Handler = async (event) => {
     }
 
     const result = env.GOOGLE_MAPS_API_KEY;
-    console.log('✅ Returning result:', result ? 'KEY_EXISTS' : 'NULL');
-    console.log('✅ Result type:', typeof result);
 
     return result;
 };
