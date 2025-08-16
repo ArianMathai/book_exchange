@@ -33,3 +33,4 @@ amplifyconfiguration*
 .env.sandbox
 .env.local
 .env
+.env.temp
