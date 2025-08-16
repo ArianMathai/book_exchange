@@ -1,0 +1,158 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'Unified add_book template for all environments'
+
+# Global settings for all functions
+Globals:
+  Function:
+    Timeout: 10
+    LoggingConfig:
+      LogFormat: JSON
+
+# Parameters for environment configuration
+Parameters:
+  Environment:
+    Type: String
+    Default: sandbox
+    AllowedValues: [sandbox, dev, prod]
+    Description: The deployment environment
+
+  CognitoUserPoolId:
+    Type: String
+    Description: The ID of the Cognito User Pool for this environment
+    # No default - must be provided via parameter overrides
+
+# Conditions for environment-specific logic
+Conditions:
+  IsSandbox: !Equals [!Ref Environment, sandbox]
+  IsDev: !Equals [!Ref Environment, dev]
+  IsProd: !Equals [!Ref Environment, prod]
+
+Resources:
+  # API Gateway with environment-aware stage name
+  AddBookApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !If
+        - IsProd
+        - Prod
+        - !If
+          - IsDev
+          - Dev
+          - Sandbox
+      Cors:
+        AllowMethods: "'POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: !If
+          - IsProd
+          - "'https://main.d2nd4m61c5fnyt.amplifyapp.com/'"  # Replace with your actual production domain
+          - "'*'"  # Allow all origins for dev/sandbox
+        MaxAge: "'600'"
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}"
+
+  AddBookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      # Use the same code directory - no need for separate folders
+      CodeUri: add_book/
+      Handler: app.lambdaHandler
+      Runtime: nodejs22.x
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          # Prod uses NeonDatabaseUrlProd, dev/sandbox use NeonDatabaseUrlDev
+          SECRET_NAME: !If
+            - IsProd
+            - "NeonDatabaseUrlProd"
+            - "NeonDatabaseUrlDev"
+          REGION: "eu-north-1"
+          OWNER_ID_FIELD: "owner_id"
+          ENVIRONMENT: !Ref Environment
+      Events:
+        # POST request with authentication
+        AddBook:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AddBookApi
+            Path: /books
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+        # OPTIONS request WITHOUT authentication for CORS preflight
+        AddBookOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AddBookApi
+            Path: /books
+            Method: options
+            Auth:
+              Authorizer: NONE
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource: !If
+                - IsProd
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:NeonDatabaseUrlProd-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:NeonDatabaseUrlDev-*"
+
+  # Gateway responses for proper CORS handling
+  UnauthorizedGatewayResponse:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      ResponseType: UNAUTHORIZED
+      RestApiId: !Ref AddBookApi
+      StatusCode: 401
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: !If
+          - IsProd
+          - "'https://main.d2nd4m61c5fnyt.amplifyapp.com/'"
+          - "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+
+  Default4xxGatewayResponse:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      ResponseType: DEFAULT_4XX
+      RestApiId: !Ref AddBookApi
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: !If
+          - IsProd
+          - "'https://main.d2nd4m61c5fnyt.amplifyapp.com'"
+          - "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+
+  Default5xxGatewayResponse:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      RestApiId: !Ref AddBookApi
+      ResponseType: DEFAULT_5XX
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: !If
+          - IsProd
+          - "'https://main.d2nd4m61c5fnyt.amplifyapp.com'"
+          - "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+
+Outputs:
+  AddBookApi:
+    Description: !Sub "API Gateway endpoint URL for ${Environment} stage for Add Book function"
+    Value: !Sub "https://${AddBookApi}.execute-api.${AWS::Region}.amazonaws.com/${AddBookApi.Stage}/books/"
+  AddBookFunction:
+    Description: Add Book Lambda Function ARN
+    Value: !GetAtt AddBookFunction.Arn
+  AddBookFunctionIamRole:
+    Description: Implicit IAM Role created for Add Book function
+    Value: !GetAtt AddBookFunctionRole.Arn
+  Environment:
+    Description: The deployed environment
+    Value: !Ref Environment

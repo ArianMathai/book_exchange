@@ -1,0 +1,108 @@
+version = 0.1
+
+# Sandbox environment (wired for Amplify Sandbox via deploy script)
+[sandbox.global.parameters]
+stack_name = "get-book-indexes-sandbox"
+
+[sandbox.build.parameters]
+cached = true
+parallel = true
+
+[sandbox.validate.parameters]
+lint = true
+
+[sandbox.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+s3_prefix = "get-book-indexes-sandbox"
+region = "eu-north-1"
+parameter_overrides = [
+    "Environment=sandbox"
+    # CognitoUserPoolId is injected by deploy-sandbox script (from amplify_outputs.json)
+]
+image_repositories = []
+
+[sandbox.package.parameters]
+resolve_s3 = true
+
+[sandbox.sync.parameters]
+watch = true
+
+[sandbox.local_start_api.parameters]
+warm_containers = "EAGER"
+
+[sandbox.local_start_lambda.parameters]
+warm_containers = "EAGER"
+
+
+# Development environment
+[dev.global.parameters]
+stack_name = "get-book-indexes-dev"
+
+[dev.build.parameters]
+cached = true
+parallel = true
+
+[dev.validate.parameters]
+lint = true
+
+[dev.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+s3_prefix = "get-book-indexes-dev"
+region = "eu-north-1"
+parameter_overrides = [
+    "Environment=dev",
+    "CognitoUserPoolId=\"eu-north-1_Cpr2QkIBI\""
+]
+image_repositories = []
+
+[dev.package.parameters]
+resolve_s3 = true
+
+[dev.sync.parameters]
+watch = true
+
+[dev.local_start_api.parameters]
+warm_containers = "EAGER"
+
+[dev.local_start_lambda.parameters]
+warm_containers = "EAGER"
+
+
+# Production environment
+[prod.global.parameters]
+stack_name = "get-book-indexes-prod"
+
+[prod.build.parameters]
+cached = true
+parallel = true
+
+[prod.validate.parameters]
+lint = true
+
+[prod.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
+resolve_s3 = true
+s3_prefix = "get-book-indexes-prod"
+region = "eu-north-1"
+parameter_overrides = [
+    "Environment=prod",
+    "CognitoUserPoolId=\"eu-north-1_ncYQOqnAD\""
+]
+image_repositories = []
+
+[prod.package.parameters]
+resolve_s3 = true
+
+[prod.sync.parameters]
+watch = true
+
+[prod.local_start_api.parameters]
+warm_containers = "EAGER"
+
+[prod.local_start_lambda.parameters]
+warm_containers = "EAGER"
