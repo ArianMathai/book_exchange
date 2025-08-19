@@ -422,7 +422,7 @@ const AddBookForm: React.FC = () => {
                 isbn: formData.isbn.trim() || null,
                 ownerId: sub,
                 ownerEmail: ownerEmail,
-                createdAt: Math.floor(Date.now() / 1000), // Unix timestamp
+                //createdAt: Math.floor(Date.now() / 1000), // Unix timestamp
                 loanedOut: false,
                 loanedTo: null,
                 imageUrl: imageUrl,

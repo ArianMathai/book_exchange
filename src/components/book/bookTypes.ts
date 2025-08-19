@@ -5,7 +5,7 @@ export interface BookType {
     title: string;
     author: string;
     isbn?: string | null;
-    createdAt: number;
+    createdAt: string;
     loanedOut: boolean;
     loanedTo?: string | null;
     imageUrl?: string | null;

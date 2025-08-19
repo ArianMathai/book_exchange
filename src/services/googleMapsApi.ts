@@ -14,8 +14,15 @@ export interface AddressDetails {
 }
 
 export const fetchGoogleMapsKey = async (): Promise<string | null> => {
+
+    if (import.meta.env.VITE_GOOGLE_MAPS_BROWSER_KEY) {
+        console.log("Using local Google Maps API key from .env.local");
+        return import.meta.env.VITE_GOOGLE_MAPS_BROWSER_KEY;
+    }
+
     try {
         const result = await client.queries.fetchMapsApiKey();
+        console.log("Maps API key", result);
         return result.data ?? null;
     } catch (error) {
         console.error('❌ Failed to fetch Google Maps API key:', error);

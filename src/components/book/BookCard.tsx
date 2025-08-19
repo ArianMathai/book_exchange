@@ -174,11 +174,11 @@ const BookCard: React.FC<BookCardProps> = ({ book, className, distance }) => {
                             <div className="flex items-center text-xs sm:text-sm text-slate-600">
                                 <Calendar className="w-3 sm:w-4 h-3 sm:h-4 mr-1 sm:mr-2 text-slate-400 flex-shrink-0" />
                                 <span className="truncate">
-                                Added {new Date(book.createdAt * 1000).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric',
-                                })}
+                                Added {new Intl.DateTimeFormat("en-US", {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                }).format(new Date(book.createdAt))}
                             </span>
                             </div>
 

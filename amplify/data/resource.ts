@@ -30,7 +30,7 @@ const schema = a.schema({
         isbn: a.string(), // optional
         ownerId: a.string().required(), // Current owner (original owner or borrower)
         ownerEmail: a.string().required(),
-        createdAt: a.timestamp().required(),
+        // createdAt: a.datetime().required(),
 
         // Loan status for original books
         loanedOut: a.boolean().required(),
@@ -45,9 +45,9 @@ const schema = a.schema({
 
         // Borrowing status and history
         borrowStatus: a.enum(['active', 'returned', 'overdue']), // null/undefined for owned books
-        borrowedAt: a.timestamp(), // When the loan started
-        returnedAt: a.timestamp(), // When the loan was returned
-        dueDate: a.timestamp(), // When the loan is due
+        borrowedAt: a.datetime(), // When the loan started
+        returnedAt: a.datetime(), // When the loan was returned
+        dueDate: a.datetime(), // When the loan is due
 
         // Optional: User feedback on returned books
         borrowerRating: a.integer(), // 1-5 stars (for returned books)
@@ -74,12 +74,12 @@ const schema = a.schema({
         approvedDuration: a.integer(), // Days, set by lender when approving
 
         // Timestamps
-        requestedAt: a.timestamp().required(),
-        respondedAt: a.timestamp(), // When lender approved/rejected
-        completedAt: a.timestamp(), // When handoff was completed
+        requestedAt: a.datetime().required(),
+        respondedAt: a.datetime(), // When lender approved/rejected
+        completedAt: a.datetime(), // When handoff was completed
 
         // Calculated fields
-        dueDate: a.timestamp(), // Calculated when loan is completed
+        dueDate: a.datetime(), // Calculated when loan is completed
     }).authorization(allow => [
         // Allow both requester and lender to read/update
         allow.authenticated().to(['read']),
@@ -96,12 +96,12 @@ const schema = a.schema({
 
         // Meeting details
         meetingLocation: a.string(),
-        scheduledTime: a.timestamp(),
+        scheduledTime: a.datetime(),
 
         // Confirmation timestamps
-        lenderConfirmedAt: a.timestamp(),
-        borrowerConfirmedAt: a.timestamp(),
-        completedAt: a.timestamp(), // When both confirmed
+        lenderConfirmedAt: a.datetime(),
+        borrowerConfirmedAt: a.datetime(),
+        completedAt: a.datetime(), // When both confirmed
     }).authorization(allow => [
         allow.authenticated().to(['read']),
         allow.owner().to(['create', 'read', 'update', 'delete']),
@@ -116,8 +116,8 @@ const schema = a.schema({
         loanRequestId: a.string().required(),
 
         // Loan period
-        startDate: a.timestamp().required(),
-        dueDate: a.timestamp(), // null for indefinite loans
+        startDate: a.datetime().required(),
+        dueDate: a.datetime(), // null for indefinite loans
 
         // Status tracking
         isOverdue: a.boolean().default(false),
@@ -134,7 +134,7 @@ const schema = a.schema({
         title: a.string().required(),
         message: a.string().required(),
         isRead: a.boolean().default(false),
-        createdAt: a.timestamp().required(),
+        // createdAt: a.datetime().required(),
 
         // Optional reference IDs
         loanRequestId: a.string(),
