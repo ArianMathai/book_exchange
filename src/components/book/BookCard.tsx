@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -88,6 +89,11 @@ const BookCard: React.FC<BookCardProps> = ({ book, className, distance }) => {
 
 
     return (
+        <Link
+            to={`/book/${book.id}`}
+            aria-label={`View details for ${book.title}`}
+            className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500 rounded-lg"
+        >
         <Card className={cn(
             "group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-slate-200 hover:border-red-200",
             className
@@ -206,6 +212,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, className, distance }) => {
                 </div>
             </div>
         </Card>
+        </Link>
     );
 }
 export default BookCard;
