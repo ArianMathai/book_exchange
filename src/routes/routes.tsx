@@ -6,6 +6,7 @@ import Home from "@/pages/Home.tsx";
 import LibraryPage from "@/pages/LibraryPage.tsx";
 import AddBookForm from "@/pages/AddBookForm.tsx";
 import SetupLocationPage from "@/pages/setup/SetupLocationPage.tsx";
+import BookDetailsPage from "@/pages/BookDetailsPage.tsx";
 
 export const routes: RouteObject[] = [
     {
@@ -16,6 +17,7 @@ export const routes: RouteObject[] = [
             { path: '/profile', element: <Profile /> },
             { path: '/library', element: <LibraryPage /> },
             { path: '/add-book', element: <AddBookForm /> },
+            { path: '/book/:id', element: <BookDetailsPage /> },
             { path: '/setup', element: <SetupLocationPage /> },
         ],
     },
