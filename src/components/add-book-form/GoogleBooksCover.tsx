@@ -15,10 +15,10 @@ interface GoogleBooksCoverProps {
 }
 
 const GoogleBooksCover: React.FC<GoogleBooksCoverProps> = ({
-                                                               image,
-                                                               isSearching,
-                                                               onRefresh,
-                                                               canRefresh,
+       image,
+       isSearching,
+       onRefresh,
+       canRefresh,
                                                            }) => {
     return (
         <div className="space-y-4">

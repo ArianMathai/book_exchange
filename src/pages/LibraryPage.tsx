@@ -32,7 +32,6 @@ const LibraryPage: React.FC = () => {
         setError(null);
 
         try {
-            // TODO: check that this fetches only owners books
             const attrs = await fetchUserAttributes();
             const currentUserSub = attrs.sub;
 
