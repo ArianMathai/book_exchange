@@ -1,5 +1,5 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
-import {fetchMapsApiKey} from "../functions/fetchMapsApiKey/resource";
+import {addressAutocomplete} from "../functions/addressAutocomplete/resource";
 
 const schema = a.schema({
 
@@ -143,11 +143,54 @@ const schema = a.schema({
         allow.owner().to(['create', 'read', 'update']), // Users can read and mark as read
     ]),
 
-    fetchMapsApiKey: a
+    // Custom types for address functionality
+    AddressSuggestion: a.customType({
+        description: a.string().required(),
+        place_id: a.string().required(),
+    }),
+
+    AddressSearchResult: a.customType({
+        suggestions: a.ref('AddressSuggestion').array().required(),
+    }),
+
+    AddressDetails: a.customType({
+        address: a.string().required(),
+        city: a.string().required(),
+        postalCode: a.string().required(),
+        latitude: a.float(),
+        longitude: a.float(),
+    }),
+
+    // Custom queries
+    searchAddresses: a
         .query()
-        .returns(a.string())
-        .authorization((allow) => [allow.authenticated()])
-        .handler(a.handler.function(fetchMapsApiKey)),
+        .arguments({
+            input: a.string().required(),
+            types: a.string().array(), // Optional: ['address', 'geocode', etc.]
+        })
+        .returns(a.ref('AddressSearchResult'))
+        .handler(a.handler.function(addressAutocomplete))
+        .authorization((allow) => [allow.authenticated()]),
+
+    reverseGeocode: a
+        .query()
+        .arguments({
+            lat: a.float().required(),
+            lng: a.float().required(),
+        })
+        .returns(a.ref('AddressDetails'))
+        .handler(a.handler.function(addressAutocomplete))
+        .authorization((allow) => [allow.authenticated()]),
+
+    getPlaceDetails: a
+        .query()
+        .arguments({
+            place_id: a.string().required(),
+        })
+        .returns(a.ref('AddressDetails').required())
+        .handler(a.handler.function(addressAutocomplete))
+        .authorization((allow) => [allow.authenticated()]),
+
 });
 
 export type Schema = ClientSchema<typeof schema>;
