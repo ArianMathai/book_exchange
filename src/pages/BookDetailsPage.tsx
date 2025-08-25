@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, BookOpen } from 'lucide-react';
 import type { BookType } from '@/components/book/bookTypes';
 import { getUrl } from 'aws-amplify/storage';
+import LoanRequestDialog from '@/components/loan/LoanRequestDialog.tsx';
 
 const BookDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,7 +17,6 @@ const BookDetailsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [resolvedImageUrl, setResolvedImageUrl] = useState<string | null>(null);
   const [isResolvingUrl, setIsResolvingUrl] = useState(false);
-  const [isRequestingLoan, setIsRequestingLoan] = useState(false);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -36,9 +36,7 @@ const BookDetailsPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const result = await client.models.Book.get(
-            {id}
-        );
+        const result = await client.models.Book.get({ id });
 
         if (result.errors && result.errors.length > 0) {
           setError(result.errors[0].message);
@@ -109,32 +107,9 @@ const BookDetailsPage: React.FC = () => {
     resolveImage();
   }, [book]);
 
-  const handleRequestLoan = async () => {
-    if (!book || !currentUser) return;
-
-    setIsRequestingLoan(true);
-    try {
-      // TODO: Implement your loan request logic here
-      // This might involve creating a loan request record, sending notifications, etc.
-      console.log('Requesting loan for book:', book.id);
-
-      // Example API call structure:
-      // await client.models.LoanRequest.create({
-      //   bookId: book.id,
-      //   requesterId: currentUser.userId,
-      //   requesterEmail: currentUser.signInDetails?.loginId,
-      //   ownerId: book.ownerId,
-      //   status: 'pending'
-      // });
-
-      // Show success message or redirect
-      alert('Loan request sent successfully!');
-    } catch (err) {
-      console.error('Failed to request loan:', err);
-      alert('Failed to send loan request. Please try again.');
-    } finally {
-      setIsRequestingLoan(false);
-    }
+  const handleLoanRequestSuccess = () => {
+    // Optionally refresh book data or show additional UI feedback
+    console.log('Loan request sent successfully!');
   };
 
   // Check if current user is the owner of the book
@@ -216,24 +191,17 @@ const BookDetailsPage: React.FC = () => {
                 </span>
                 </div>
 
-                {/* Request Loan Button */}
+                {/* Request Loan Dialog */}
                 {shouldShowRequestButton && (
                     <div className="pt-4">
-                      <Button
-                          onClick={handleRequestLoan}
-                          disabled={isRequestingLoan}
-                          className="w-full lg:w-auto"
-                          size="lg"
+                      <LoanRequestDialog
+                          book={book}
+                          onSuccess={handleLoanRequestSuccess}
                       >
-                        {isRequestingLoan ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Requesting...
-                            </>
-                        ) : (
-                            'Request Loan'
-                        )}
-                      </Button>
+                        <Button className="w-full lg:w-auto" size="lg">
+                          Request Loan
+                        </Button>
+                      </LoanRequestDialog>
                     </div>
                 )}
 
