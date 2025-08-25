@@ -10,6 +10,9 @@ export interface BookType {
     loanedTo?: string | null;
     imageUrl?: string | null;
     imageSource?: 'manual' | 'google_books' | null;
+    ownerId?: string;
+    isOriginalCopy?: boolean | null;
+    borrowStatus?: 'active' | 'returned' | 'overdue' | null;
 }
 
 // Book Card Component

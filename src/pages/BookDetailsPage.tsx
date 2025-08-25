@@ -1,18 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { getCurrentUser, type GetCurrentUserOutput } from 'aws-amplify/auth';
 import { client } from '@/lib/amplifyClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, BookOpen } from 'lucide-react';
 import type { BookType } from '@/components/book/bookTypes';
 import { getUrl } from 'aws-amplify/storage';
 
 const BookDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [book, setBook] = useState<BookType | null>(null);
+  const [currentUser, setCurrentUser] = useState<GetCurrentUserOutput | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resolvedImageUrl, setResolvedImageUrl] = useState<string | null>(null);
   const [isResolvingUrl, setIsResolvingUrl] = useState(false);
+  const [isRequestingLoan, setIsRequestingLoan] = useState(false);
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const user = await getCurrentUser();
+        setCurrentUser(user);
+      } catch (err) {
+        console.log('No authenticated user');
+      }
+    };
+    fetchCurrentUser();
+  }, []);
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -20,21 +36,9 @@ const BookDetailsPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const result = await client.models.Book.get({
-          id,
-          selectionSet: [
-            'id',
-            'title',
-            'author',
-            'isbn',
-            'ownerEmail',
-            'createdAt',
-            'loanedOut',
-            'loanedTo',
-            'imageUrl',
-            'imageSource'
-          ]
-        });
+        const result = await client.models.Book.get(
+            {id}
+        );
 
         if (result.errors && result.errors.length > 0) {
           setError(result.errors[0].message);
@@ -49,12 +53,15 @@ const BookDetailsPage: React.FC = () => {
             title: data.title,
             author: data.author,
             isbn: data.isbn,
+            ownerId: data.ownerId,
             ownerEmail: data.ownerEmail,
             createdAt: data.createdAt,
             loanedOut: data.loanedOut,
             loanedTo: data.loanedTo,
             imageUrl: data.imageUrl ?? undefined,
             imageSource: data.imageSource === 'manual' || data.imageSource === 'google_books' ? data.imageSource : null,
+            isOriginalCopy: data.isOriginalCopy,
+            borrowStatus: data.borrowStatus,
           };
           setBook(transformed);
         }
@@ -102,48 +109,156 @@ const BookDetailsPage: React.FC = () => {
     resolveImage();
   }, [book]);
 
+  const handleRequestLoan = async () => {
+    if (!book || !currentUser) return;
+
+    setIsRequestingLoan(true);
+    try {
+      // TODO: Implement your loan request logic here
+      // This might involve creating a loan request record, sending notifications, etc.
+      console.log('Requesting loan for book:', book.id);
+
+      // Example API call structure:
+      // await client.models.LoanRequest.create({
+      //   bookId: book.id,
+      //   requesterId: currentUser.userId,
+      //   requesterEmail: currentUser.signInDetails?.loginId,
+      //   ownerId: book.ownerId,
+      //   status: 'pending'
+      // });
+
+      // Show success message or redirect
+      alert('Loan request sent successfully!');
+    } catch (err) {
+      console.error('Failed to request loan:', err);
+      alert('Failed to send loan request. Please try again.');
+    } finally {
+      setIsRequestingLoan(false);
+    }
+  };
+
+  // Check if current user is the owner of the book
+  const isOwner = currentUser && book && (
+      currentUser.userId === book.ownerId ||
+      currentUser.signInDetails?.loginId === book.ownerEmail
+  );
+
+  // Determine if we should show the request loan button
+  const shouldShowRequestButton = book && currentUser && !isOwner &&
+      book.isOriginalCopy && !book.loanedOut;
+
   if (loading || isResolvingUrl) {
     return (
-      <div className="flex justify-center items-center h-full py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-      </div>
+        <div className="flex justify-center items-center h-full py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+        </div>
     );
   }
 
   if (error || !book) {
     return (
-      <div className="p-4 text-red-600">Failed to load book details.</div>
+        <div className="p-4 text-red-600">Failed to load book details.</div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-4">
-      <Card className="overflow-hidden">
-        {resolvedImageUrl && (
-          <img
-            src={resolvedImageUrl}
-            alt={`Cover of ${book.title}`}
-            className="w-full h-64 object-cover"
-          />
-        )}
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-slate-900">{book.title}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 text-slate-700">
-          <p><span className="font-medium">Author:</span> {book.author}</p>
-          {book.isbn && (
-            <p><span className="font-medium">ISBN:</span> {book.isbn}</p>
-          )}
-          <p><span className="font-medium">Owner:</span> {book.ownerEmail}</p>
-          <p>
-            <span className="font-medium">Status:</span>{' '}
-            {book.loanedOut ? (
-              book.loanedTo ? `Loaned to ${book.loanedTo}` : 'Loaned out'
-            ) : 'Available'}
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+      <div className="max-w-6xl mx-auto p-4">
+        <Card className="overflow-hidden">
+          <div className="lg:flex lg:gap-6">
+            {/* Image Section */}
+            <div className="flex justify-center lg:justify-start lg:flex-shrink-0 pb-5">
+              {resolvedImageUrl ? (
+                  <img
+                      src={resolvedImageUrl}
+                      alt={`Cover of ${book.title}`}
+                      className="w-48 h-64 lg:w-56 lg:h-72 object-cover rounded-lg shadow-md"
+                  />
+              ) : (
+                  <div className="w-48 h-64 lg:w-56 lg:h-72 bg-slate-100 flex items-center justify-center rounded-lg shadow-md">
+                    <BookOpen className="w-16 h-16 text-slate-400" />
+                  </div>
+              )}
+            </div>
+
+            {/* Content Section */}
+            <div className="lg:w-2/3 lg:flex lg:flex-col">
+              <CardHeader>
+                <CardTitle className="text-2xl lg:text-3xl font-bold text-slate-900 truncate">
+                  {book.title}
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent className="space-y-4 text-slate-700 lg:flex-1">
+                <p className="text-lg">
+                  <span className="font-medium">Author:</span> {book.author}
+                </p>
+
+                {book.isbn && (
+                    <p>
+                      <span className="font-medium">ISBN:</span> {book.isbn}
+                    </p>
+                )}
+
+                <p>
+                  <span className="font-medium">Owner:</span> {book.ownerEmail}
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Status:</span>
+                  <span className={`px-2 py-1 rounded text-sm font-medium ${
+                      book.loanedOut
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-green-100 text-green-800'
+                  }`}>
+                  {book.loanedOut ? (
+                      book.loanedTo ? `Loaned to ${book.loanedTo}` : 'Loaned out'
+                  ) : 'Available'}
+                </span>
+                </div>
+
+                {/* Request Loan Button */}
+                {shouldShowRequestButton && (
+                    <div className="pt-4">
+                      <Button
+                          onClick={handleRequestLoan}
+                          disabled={isRequestingLoan}
+                          className="w-full lg:w-auto"
+                          size="lg"
+                      >
+                        {isRequestingLoan ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Requesting...
+                            </>
+                        ) : (
+                            'Request Loan'
+                        )}
+                      </Button>
+                    </div>
+                )}
+
+                {/* Show message if user is owner */}
+                {isOwner && (
+                    <div className="pt-4">
+                      <p className="text-sm text-slate-500 italic">
+                        This is your book
+                      </p>
+                    </div>
+                )}
+
+                {/* Show message if book is already loaned */}
+                {!isOwner && book.loanedOut && (
+                    <div className="pt-4">
+                      <p className="text-sm text-red-600">
+                        This book is currently loaned out
+                      </p>
+                    </div>
+                )}
+              </CardContent>
+            </div>
+          </div>
+        </Card>
+      </div>
   );
 };
 
