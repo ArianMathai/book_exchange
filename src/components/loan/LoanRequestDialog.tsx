@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { client } from '@/lib/amplifyClient';
-import { getCurrentUser } from 'aws-amplify/auth';
+import {fetchUserAttributes, getCurrentUser} from 'aws-amplify/auth';
 import type { BookType } from '@/components/book/bookTypes';
 
 interface LoanRequestDialogProps {
     book: BookType;
-    children: React.ReactNode; // The trigger button
     onSuccess?: () => void;
 }
 
@@ -21,10 +20,10 @@ interface LoanRequestForm {
 }
 
 const LoanRequestDialog: React.FC<LoanRequestDialogProps> = ({
-                                                                 book,
-                                                                 children,
-                                                                 onSuccess
-                                                             }) => {
+         book,
+         onSuccess
+}) => {
+
     const [open, setOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -41,11 +40,14 @@ const LoanRequestDialog: React.FC<LoanRequestDialogProps> = ({
         try {
             // Get current user
             const currentUser = await getCurrentUser();
+            const attributes = await fetchUserAttributes();
+            const currentUserEmail = attributes.email ?? 'Someone';
 
             if (!book.ownerId) {
                 console.error("Book ownerId is missing");
                 throw new Error("Book ownerId is missing");
             }
+            console.log("Cur user: ", currentUserEmail);
 
             // Create loan request
             const result = await client.models.LoanRequest.create({
@@ -57,6 +59,19 @@ const LoanRequestDialog: React.FC<LoanRequestDialogProps> = ({
                 proposedDuration: form.proposedDuration ? Number(form.proposedDuration) : undefined,
                 requestedAt: new Date().toISOString()
             });
+            console.log("LoanRequestResult: ", result);
+
+            if (result.data && result.data.id) {
+                const notification = await client.models.Notification.create({
+                    userId: book.ownerId,
+                    type: 'loan_request',
+                    title: 'New loan request',
+                    message: `"${currentUserEmail}" wants to borrow "${book.title}"!`, //TODO: change currentUserEmail to username when username feature is added
+                    loanRequestId: result.data.id,
+                    bookId: book.id,
+                })
+                console.log("Notification: ", notification);
+            }
 
             if (result.errors && result.errors.length > 0) {
                 throw new Error(result.errors[0].message);
@@ -90,7 +105,9 @@ const LoanRequestDialog: React.FC<LoanRequestDialogProps> = ({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                {children}
+                <Button asChild className="w-full lg:w-auto" size="lg">
+                    <span>Request Loan</span>
+                </Button>
             </DialogTrigger>
 
             <DialogContent className="sm:max-w-md">
@@ -98,6 +115,11 @@ const LoanRequestDialog: React.FC<LoanRequestDialogProps> = ({
                     <DialogTitle className="text-xl font-semibold">
                         Request to Borrow
                     </DialogTitle>
+                    <DialogDescription>
+                          <span className="text-sm text-gray-600 mt-2 block">
+                            <span className="font-medium">“{book.title}”</span> by {book.author} — owner: {book.ownerEmail}
+                          </span>
+                    </DialogDescription>
                     <div className="text-sm text-gray-600 mt-2">
                         <p className="font-medium">"{book.title}"</p>
                         <p>by {book.author}</p>

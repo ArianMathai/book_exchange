@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import { getCurrentUser, type GetCurrentUserOutput } from 'aws-amplify/auth';
 import { client } from '@/lib/amplifyClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Loader2, BookOpen } from 'lucide-react';
 import type { BookType } from '@/components/book/bookTypes';
 import { getUrl } from 'aws-amplify/storage';
@@ -198,9 +197,6 @@ const BookDetailsPage: React.FC = () => {
                           book={book}
                           onSuccess={handleLoanRequestSuccess}
                       >
-                        <Button className="w-full lg:w-auto" size="lg">
-                          Request Loan
-                        </Button>
                       </LoanRequestDialog>
                     </div>
                 )}

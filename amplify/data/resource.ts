@@ -129,18 +129,18 @@ const schema = a.schema({
 
     // Optional: Notifications system
     Notification: a.model({
-        userId: a.string().required(),
+        userId: a.string().required(), // Receiver of notification
         type: a.enum(['loan_request', 'loan_approved', 'loan_rejected', 'handoff_ready', 'book_overdue', 'book_returned']),
         title: a.string().required(),
         message: a.string().required(),
         isRead: a.boolean().default(false),
-        // createdAt: a.datetime().required(),
 
         // Optional reference IDs
         loanRequestId: a.string(),
         bookId: a.string(),
     }).authorization(allow => [
-        allow.owner().to(['create', 'read', 'update']), // Users can read and mark as read
+        allow.authenticated().to(['create']), //TODO: Change this to custom auth rule so that creator of notification can create, but only owner can read + update
+        allow.ownerDefinedIn('userId').to(['read','update']),
     ]),
 
     // Custom types for address functionality

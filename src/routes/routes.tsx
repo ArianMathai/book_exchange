@@ -7,6 +7,7 @@ import LibraryPage from "@/pages/LibraryPage.tsx";
 import AddBookForm from "@/pages/AddBookForm.tsx";
 import SetupLocationPage from "@/pages/setup/SetupLocationPage.tsx";
 import BookDetailsPage from "@/pages/BookDetailsPage.tsx";
+import Inbox from "@/pages/Inbox.tsx";
 
 export const routes: RouteObject[] = [
     {
@@ -19,6 +20,7 @@ export const routes: RouteObject[] = [
             { path: '/add-book', element: <AddBookForm /> },
             { path: '/book/:id', element: <BookDetailsPage /> },
             { path: '/setup', element: <SetupLocationPage /> },
+            { path: '/inbox', element: <Inbox /> },
         ],
     },
 ];
