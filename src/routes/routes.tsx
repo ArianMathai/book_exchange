@@ -8,6 +8,7 @@ import AddBookForm from "@/pages/AddBookForm.tsx";
 import SetupLocationPage from "@/pages/setup/SetupLocationPage.tsx";
 import BookDetailsPage from "@/pages/BookDetailsPage.tsx";
 import Inbox from "@/pages/Inbox.tsx";
+import LoanRequestDetail from "@/pages/LoanRequestDetail.tsx";
 
 export const routes: RouteObject[] = [
     {
@@ -21,6 +22,7 @@ export const routes: RouteObject[] = [
             { path: '/book/:id', element: <BookDetailsPage /> },
             { path: '/setup', element: <SetupLocationPage /> },
             { path: '/inbox', element: <Inbox /> },
+            { path: '/loan-request/:id', element: <LoanRequestDetail /> },
         ],
     },
 ];

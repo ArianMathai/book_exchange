@@ -127,6 +127,18 @@ const schema = a.schema({
         allow.owner().to(['create', 'read', 'update', 'delete']),
     ]),
 
+    // Public profile accessible to all authenticated users
+    PublicProfile: a.model({
+        userId: a.string().required(), // Reference to User.sub
+        username: a.string().required(), // Display name
+        email: a.string().required(), // Public email
+        bio: a.string(), // Optional bio/description
+    })
+    .authorization(allow => [
+        allow.ownerDefinedIn('userId'), // Owner can manage their profile
+        allow.authenticated().to(['read']) // All authenticated users can read
+    ]),
+
     // Optional: Notifications system
     Notification: a.model({
         userId: a.string().required(), // Receiver of notification

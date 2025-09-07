@@ -32,12 +32,14 @@ const BurgerMenu: React.FC = () => {
         { to: '/profile', icon: User, label: 'Profile', description: 'Account settings' },
     ];
 
-    // Check if user has set up location, else -> redirect to setup page
+    // Check if user has set up location and public profile
     useEffect(() => {
         const checkUserProfile = async () => {
             try {
                 const attributes = await fetchUserAttributes();
                 const sub = attributes?.sub;
+                const email = attributes?.email;
+                const preferredUsername = attributes?.preferred_username;
 
                 if (!sub) {
                     console.error("❌ No Cognito user ID found. Signing out...");
@@ -45,11 +47,28 @@ const BurgerMenu: React.FC = () => {
                     return;
                 }
 
+                // Check if user has location setup
                 const res = await client.models.User.get({ sub });
 
                 if (!res?.data || !res.data.coordinates) {
                     navigate("/setup");
                     return;
+                }
+
+                // Check if user has a public profile, create one if not
+                const profileResult = await client.models.PublicProfile.list({
+                    filter: { userId: { eq: sub } }
+                });
+
+                if (!profileResult.data || profileResult.data.length === 0) {
+                    // Create public profile with default values
+                    await client.models.PublicProfile.create({
+                        userId: sub,
+                        username: preferredUsername || `user_${sub.slice(-8)}` || 'User',
+                        email: email || '',
+                        bio: ''
+                    });
+                    console.log("✅ Created public profile for user");
                 }
             } catch (err) {
                 console.error("❌ Error checking user profile:", err);
@@ -234,7 +253,14 @@ const BurgerMenu: React.FC = () => {
                                                             <span className="font-semibold text-emerald-50 group-hover:text-white transition-colors duration-300">
                                                                 {item.label}
                                                             </span>
-
+                                                            {item.to === '/inbox' && unreadCount > 0 && (
+                                                                <span
+                                                                    className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-600 text-white text-xs font-semibold leading-none"
+                                                                    aria-label={`${unreadCount} unread`}
+                                                                >
+                                                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                         <p className="text-emerald-300/80 text-sm mt-1 group-hover:text-emerald-200/90 transition-colors duration-300">
                                                             {item.description}

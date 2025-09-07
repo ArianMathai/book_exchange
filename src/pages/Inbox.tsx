@@ -4,11 +4,13 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Check, Bell } from 'lucide-react';
 import {useNotifications} from "@/context/notificationsContext.tsx";
+import { useNavigate } from 'react-router-dom';
 
 
 const Inbox: React.FC = () => {
     const { notifications, unreadCount, loading, markRead, markAllRead } = useNotifications();
     const [tab, setTab] = useState<'all' | 'unread'>('unread');
+    const navigate = useNavigate();
 
     const filteredItems = useMemo(() => {
         return tab === 'unread'
@@ -16,8 +18,16 @@ const Inbox: React.FC = () => {
             : notifications;
     }, [notifications, tab]);
 
-    const handleMarkRead = (notificationId: string) => {
-        markRead(notificationId);
+    const handleMarkRead = async (notificationId: string, e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        await markRead(notificationId);
+    };
+
+    const handleNotificationClick = (notification: typeof notifications[0]) => {
+        // Navigate to loan request detail if it has a loanRequestId
+        if (notification.loanRequestId && notification.type === 'loan_request') {
+            navigate(`/loan-request/${notification.loanRequestId}`);
+        }
     };
 
     return (
@@ -72,7 +82,8 @@ const Inbox: React.FC = () => {
                 {filteredItems.map(n => (
                     <div
                         key={n.id}
-                        className={`rounded-lg border p-4 bg-white ${n.isRead ? 'opacity-80' : 'border-emerald-200'}`}
+                        className={`rounded-lg border p-4 bg-white transition-all cursor-pointer hover:shadow-md hover:border-emerald-300 ${n.isRead ? 'opacity-80' : 'border-emerald-200'}`}
+                        onClick={() => handleNotificationClick(n)}
                     >
                         <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0">
@@ -88,7 +99,7 @@ const Inbox: React.FC = () => {
                                 )}
                             </div>
                             {!n.isRead && (
-                                <Button size="sm" variant="outline" onClick={() => handleMarkRead(n.id)}>
+                                <Button size="sm" variant="outline" onClick={(e) => handleMarkRead(n.id, e)}>
                                     <Check className="w-4 h-4 mr-2" />
                                     Mark read
                                 </Button>
