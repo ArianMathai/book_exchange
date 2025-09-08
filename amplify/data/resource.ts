@@ -80,6 +80,9 @@ const schema = a.schema({
 
         // Calculated fields
         dueDate: a.datetime(), // Calculated when loan is completed
+        
+        // Relationship to chat (one-to-one)
+        chat: a.hasOne('Chat', 'loanRequestId'),
     }).authorization(allow => [
         // Allow both requester and lender to read/update
         allow.authenticated().to(['read']),
@@ -154,6 +157,56 @@ const schema = a.schema({
     }).authorization(allow => [
         allow.authenticated().to(['create']), //TODO: Change this to custom auth rule so that creator of notification can create, but only owner can read + update
         allow.ownerDefinedIn('userId').to(['read','update']),
+    ]),
+
+    // Chat system for loan communications
+    Chat: a.model({
+        loanRequestId: a.id().required(), // Links to the loan request
+        loanRequest: a.belongsTo('LoanRequest', 'loanRequestId'),
+        
+        // Participants
+        lenderId: a.string().required(),
+        lenderEmail: a.string().required(),
+        lenderUsername: a.string(),
+        borrowerId: a.string().required(),
+        borrowerEmail: a.string().required(),
+        borrowerUsername: a.string(),
+        
+        // Chat metadata
+        lastMessageAt: a.datetime(),
+        lastMessagePreview: a.string(),
+        
+        // Message counts for unread indicators
+        lenderUnreadCount: a.integer().default(0),
+        borrowerUnreadCount: a.integer().default(0),
+        
+        // Relationship to messages
+        messages: a.hasMany('Message', 'chatId'),
+    }).authorization(allow => [
+        // Allow authenticated users to read chats they participate in
+        allow.authenticated().to(['read', 'create', 'update']),
+    ]),
+
+    // Individual messages within chats
+    Message: a.model({
+        chatId: a.id().required(), // Reference to Chat
+        chat: a.belongsTo('Chat', 'chatId'),
+        
+        // Message content
+        content: a.string().required(),
+        messageType: a.enum(['text', 'system']),
+        
+        // Sender info
+        senderId: a.string().required(),
+        senderEmail: a.string().required(),
+        senderUsername: a.string().required(),
+        
+        // Message status
+        isRead: a.boolean().default(false),
+        readAt: a.datetime(),
+    }).authorization(allow => [
+        // Allow authenticated users to read/create messages
+        allow.authenticated().to(['read', 'create', 'update']),
     ]),
 
     // Custom types for address functionality
