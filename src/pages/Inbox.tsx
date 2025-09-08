@@ -24,9 +24,38 @@ const Inbox: React.FC = () => {
     };
 
     const handleNotificationClick = (notification: typeof notifications[0]) => {
-        // Navigate to loan request detail if it has a loanRequestId
-        if (notification.loanRequestId && notification.type === 'loan_request') {
-            navigate(`/loan-request/${notification.loanRequestId}`);
+        // Navigate based on notification type
+        switch (notification.type) {
+            case 'loan_request':
+            case 'loan_rejected':
+                // Navigate to loan request detail page
+                if (notification.loanRequestId) {
+                    navigate(`/loan-request/${notification.loanRequestId}`);
+                }
+                break;
+                
+            case 'handoff_ready':
+                // Navigate to handoff coordination page
+                if (notification.handoffId) {
+                    navigate(`/handoff/${notification.handoffId}`);
+                }
+                break;
+                
+            case 'loan_approved':
+                // For approved loans, go to handoff page if available, otherwise loan request
+                if (notification.handoffId) {
+                    navigate(`/handoff/${notification.handoffId}`);
+                } else if (notification.loanRequestId) {
+                    navigate(`/loan-request/${notification.loanRequestId}`);
+                }
+                break;
+                
+            default:
+                // For other notification types, try to navigate to loan request if available
+                if (notification.loanRequestId) {
+                    navigate(`/loan-request/${notification.loanRequestId}`);
+                }
+                break;
         }
     };
 

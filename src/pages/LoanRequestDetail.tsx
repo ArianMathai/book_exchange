@@ -102,20 +102,51 @@ const LoanRequestDetail: React.FC = () => {
                 respondedAt: new Date().toISOString(),
                 dueDate: new Date(Date.now() + duration * 24 * 60 * 60 * 1000).toISOString()
             });
-            
-            // Send notification to requester
-            await client.models.Notification.create({
-                userId: loanRequest.requesterId,
-                type: 'loan_approved',
-                title: 'Loan request approved!',
-                message: `${currentUserEmail} has approved your request to borrow "${book?.title}". Contact them to arrange pickup.`,
+
+            // Create LoanHandoff record to initiate handoff process
+            const handoffResult = await client.models.LoanHandoff.create({
                 loanRequestId: loanRequest.id,
-                bookId: loanRequest.bookId
+                lenderConfirmed: false,
+                borrowerConfirmed: false
             });
+
+            if (!handoffResult.data) {
+                throw new Error('Failed to create handoff record');
+            }
+
+            // Update loan request status to meeting_arranged
+            await client.models.LoanRequest.update({
+                id: loanRequest.id,
+                status: 'meeting_arranged'
+            });
+            
+            // Send handoff_ready notifications to both users
+            await Promise.all([
+                // Notification to borrower
+                client.models.Notification.create({
+                    userId: loanRequest.requesterId,
+                    type: 'handoff_ready',
+                    title: 'Loan approved - Arrange pickup!',
+                    message: `${currentUserEmail} has approved your request to borrow "${book?.title}". Click to coordinate the book handoff.`,
+                    loanRequestId: loanRequest.id,
+                    handoffId: handoffResult.data.id,
+                    bookId: loanRequest.bookId
+                }),
+                // Notification to lender
+                client.models.Notification.create({
+                    userId: loanRequest.lenderId,
+                    type: 'handoff_ready',
+                    title: 'Loan approved - Arrange handoff!',
+                    message: `You've approved the loan request for "${book?.title}". Click to coordinate the book handoff with the borrower.`,
+                    loanRequestId: loanRequest.id,
+                    handoffId: handoffResult.data.id,
+                    bookId: loanRequest.bookId
+                })
+            ]);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['loanRequest', id] });
-            alert('Loan request approved! The borrower has been notified.');
+            alert('Loan request approved! Both parties have been notified to coordinate the book handoff.');
             navigate('/inbox');
         },
         onError: (error) => {

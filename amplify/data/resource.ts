@@ -149,6 +149,7 @@ const schema = a.schema({
 
         // Optional reference IDs
         loanRequestId: a.string(),
+        handoffId: a.string(),
         bookId: a.string(),
     }).authorization(allow => [
         allow.authenticated().to(['create']), //TODO: Change this to custom auth rule so that creator of notification can create, but only owner can read + update

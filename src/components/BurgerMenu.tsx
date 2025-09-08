@@ -21,7 +21,6 @@ const BurgerMenu: React.FC = () => {
     const [checkingProfile, setCheckingProfile] = useState(true);
 
     const { unreadCount } = useNotifications();
-    //const [unreadCount, setUnreadCount] = useState<number>(0);
 
 
     const menuItems = [
@@ -81,35 +80,6 @@ const BurgerMenu: React.FC = () => {
         checkUserProfile();
     }, []);
 
-     /*
-    useEffect(() => {
-        const sub = client.models.Notification
-            .observeQuery({
-                filter: { isRead: { eq: false } },
-
-            })
-            .subscribe({
-                next: ({ items }) => setUnreadCount(items.length),
-                error: (err) => console.warn('observeQuery(Notification) error', err),
-            });
-        // Listen for child component updates
-        const handleNotificationUpdate = () => {
-            // Force subscription refresh - this might not work directly
-            // Alternative: manually refetch
-            client.models.Notification.list({ filter: { isRead: { eq: false } } })
-                .then(({ data }) => setUnreadCount(data?.length ?? 0))
-                .catch(console.error);
-        };
-
-        window.addEventListener('notificationUpdated', handleNotificationUpdate);
-
-        return () => {
-            sub.unsubscribe();
-            window.removeEventListener('notificationUpdated', handleNotificationUpdate);
-        }
-    }, []);
-
-      */
 
     useEffect(() => {
         console.log("UnreadCount: ", unreadCount);

@@ -9,6 +9,7 @@ import SetupLocationPage from "@/pages/setup/SetupLocationPage.tsx";
 import BookDetailsPage from "@/pages/BookDetailsPage.tsx";
 import Inbox from "@/pages/Inbox.tsx";
 import LoanRequestDetail from "@/pages/LoanRequestDetail.tsx";
+import LoanHandoffPage from "@/pages/LoanHandoffPage.tsx";
 
 export const routes: RouteObject[] = [
     {
@@ -23,6 +24,7 @@ export const routes: RouteObject[] = [
             { path: '/setup', element: <SetupLocationPage /> },
             { path: '/inbox', element: <Inbox /> },
             { path: '/loan-request/:id', element: <LoanRequestDetail /> },
+            { path: '/handoff/:id', element: <LoanHandoffPage /> },
         ],
     },
 ];
