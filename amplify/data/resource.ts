@@ -85,13 +85,15 @@ const schema = a.schema({
         chat: a.hasOne('Chat', 'loanRequestId'),
     }).authorization(allow => [
         // Allow both requester and lender to read/update
-        allow.authenticated().to(['read']),
-        allow.owner().to(['create', 'read', 'update', 'delete']),
+        allow.ownerDefinedIn("requesterId").to(['read', "create", "update"]),
+        allow.ownerDefinedIn("lenderId").to(['read', "update"]),
     ]),
 
     // Track the physical handoff process
     LoanHandoff: a.model({
         loanRequestId: a.string().required(),
+        lenderId: a.string().required(),
+        requesterId: a.string().required(),
 
         // Confirmation status
         lenderConfirmed: a.boolean().default(false),
@@ -106,8 +108,8 @@ const schema = a.schema({
         borrowerConfirmedAt: a.datetime(),
         completedAt: a.datetime(), // When both confirmed
     }).authorization(allow => [
-        allow.authenticated().to(['read']),
-        allow.owner().to(['create', 'read', 'update', 'delete']),
+        allow.ownerDefinedIn("requesterId").to(['read', "update"]),
+        allow.ownerDefinedIn("lenderId").to(['read', "update", "create"]),
     ]),
 
     // Track active loans
@@ -184,7 +186,8 @@ const schema = a.schema({
         messages: a.hasMany('Message', 'chatId'),
     }).authorization(allow => [
         // Allow authenticated users to read chats they participate in
-        allow.authenticated().to(['read', 'create', 'update']),
+        allow.ownerDefinedIn('lenderId').to(['read', 'update', "create"]),
+        allow.ownerDefinedIn('borrowerId').to(['read', 'update', "create"]),
     ]),
 
     // Individual messages within chats
@@ -200,13 +203,18 @@ const schema = a.schema({
         senderId: a.string().required(),
         senderEmail: a.string().required(),
         senderUsername: a.string().required(),
+
+        // Copy from parent chat for authorization (chat-level access)
+        lenderId: a.string().required(),
+        borrowerId: a.string().required(),
         
         // Message status
         isRead: a.boolean().default(false),
         readAt: a.datetime(),
     }).authorization(allow => [
-        // Allow authenticated users to read/create messages
-        allow.authenticated().to(['read', 'create', 'update']),
+        allow.ownerDefinedIn('senderId').to(['create', 'update']),
+        allow.ownerDefinedIn('lenderId').to(['read']),
+        allow.ownerDefinedIn('borrowerId').to(['read']),
     ]),
 
     // Custom types for address functionality

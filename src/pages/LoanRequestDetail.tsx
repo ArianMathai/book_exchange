@@ -106,6 +106,8 @@ const LoanRequestDetail: React.FC = () => {
             // Create LoanHandoff record to initiate handoff process
             const handoffResult = await client.models.LoanHandoff.create({
                 loanRequestId: loanRequest.id,
+                requesterId: loanRequest.requesterId,
+                lenderId: loanRequest.lenderId,
                 lenderConfirmed: false,
                 borrowerConfirmed: false
             });
