@@ -10,7 +10,9 @@ import {
     BookOpen, 
     Clock, 
     CheckCircle2,
-    AlertCircle
+    AlertCircle,
+    ChevronDown,
+    ChevronUp
 } from 'lucide-react';
 import { client } from '@/lib/amplifyClient';
 import { getCurrentUser } from 'aws-amplify/auth';
@@ -25,6 +27,7 @@ const LoanHandoffPage: React.FC = () => {
     const queryClient = useQueryClient();
     const { markRead } = useNotifications();
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [safetyGuidelinesExpanded, setSafetyGuidelinesExpanded] = useState(false);
 
     // Get current user
     useEffect(() => {
@@ -380,20 +383,32 @@ const LoanHandoffPage: React.FC = () => {
 
                     {/* Safety Guidelines */}
                     <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <AlertCircle className="w-5 h-5" />
-                                Safety Guidelines
+                        <CardHeader 
+                            className="cursor-pointer"
+                            onClick={() => setSafetyGuidelinesExpanded(!safetyGuidelinesExpanded)}
+                        >
+                            <CardTitle className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <AlertCircle className="w-5 h-5" />
+                                    Safety Guidelines
+                                </div>
+                                {safetyGuidelinesExpanded ? (
+                                    <ChevronUp className="w-5 h-5" />
+                                ) : (
+                                    <ChevronDown className="w-5 h-5" />
+                                )}
                             </CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <ul className="text-sm text-gray-600 space-y-1">
-                                <li>• Meet in a public, well-lit location</li>
-                                <li>• Bring a friend if you feel more comfortable</li>
-                                <li>• Verify the book condition before confirming</li>
-                                <li>• Keep communication respectful and friendly</li>
-                            </ul>
-                        </CardContent>
+                        {safetyGuidelinesExpanded && (
+                            <CardContent>
+                                <ul className="text-sm text-gray-600 space-y-1">
+                                    <li>• Meet in a public, well-lit location</li>
+                                    <li>• Bring a friend if you feel more comfortable</li>
+                                    <li>• Verify the book condition before confirming</li>
+                                    <li>• Keep communication respectful and friendly</li>
+                                </ul>
+                            </CardContent>
+                        )}
                     </Card>
                 </div>
             </div>
