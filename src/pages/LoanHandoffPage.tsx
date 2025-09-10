@@ -20,7 +20,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNotifications } from '@/context/notificationsContext';
 import LoanChat from '@/components/chat/LoanChat';
 
-//TODO: This is a work in progress. LoanHandoff is not working correctly yet. Also need to establish messaging between the users
 const LoanHandoffPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
