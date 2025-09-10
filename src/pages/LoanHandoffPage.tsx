@@ -150,9 +150,10 @@ const LoanHandoffPage: React.FC = () => {
                 updateData.borrowerConfirmedAt = new Date().toISOString();
             }
             
-            // If both parties have now confirmed, set completion time
-            const bothConfirmed = (isLender && handoff.borrowerConfirmed) || 
-                                (isBorrower && handoff.lenderConfirmed);
+            // Calculate if both parties will be confirmed after this update
+            const willLenderBeConfirmed = isLender ? true : handoff.lenderConfirmed;
+            const willBorrowerBeConfirmed = isBorrower ? true : handoff.borrowerConfirmed;
+            const bothConfirmed = willLenderBeConfirmed && willBorrowerBeConfirmed;
             
             if (bothConfirmed) {
                 updateData.completedAt = new Date().toISOString();
@@ -166,11 +167,14 @@ const LoanHandoffPage: React.FC = () => {
                 }
             }
             
-            return await client.models.LoanHandoff.update(updateData);
+            const result = await client.models.LoanHandoff.update(updateData);
+            
+            // Return both the result and completion status
+            return { result, isNowCompleted: bothConfirmed };
         },
-        onSuccess: () => {
+        onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['loanHandoff', id] });
-            if (isCompleted) {
+            if (data.isNowCompleted) {
                 alert('Handoff completed! The loan is now active.');
                 navigate('/inbox');
             } else {
