@@ -70,61 +70,64 @@ export const onCreateBook = /* GraphQL */ `subscription OnCreateBook(
   APITypes.OnCreateBookSubscriptionVariables,
   APITypes.OnCreateBookSubscription
 >;
-export const onCreateChatMessage = /* GraphQL */ `subscription OnCreateChatMessage(
-  $filter: ModelSubscriptionChatMessageFilterInput
+export const onCreateChat = /* GraphQL */ `subscription OnCreateChat(
+  $borrowerId: String
+  $filter: ModelSubscriptionChatFilterInput
+  $lenderId: String
 ) {
-  onCreateChatMessage(filter: $filter) {
-    chatId
-    content
-    createdAt
-    editedAt
-    id
-    isEdited
-    isRead
-    isSystemMessage
-    messageType
-    metadata
-    readAt
-    senderId
-    senderRole
-    updatedAt
-    __typename
-  }
-}
-` as GeneratedSubscription<
-  APITypes.OnCreateChatMessageSubscriptionVariables,
-  APITypes.OnCreateChatMessageSubscription
->;
-export const onCreateLoanChat = /* GraphQL */ `subscription OnCreateLoanChat($filter: ModelSubscriptionLoanChatFilterInput) {
-  onCreateLoanChat(filter: $filter) {
-    activeLoanId
-    bookId
+  onCreateChat(borrowerId: $borrowerId, filter: $filter, lenderId: $lenderId) {
+    borrowerEmail
     borrowerId
     borrowerUnreadCount
-    closedAt
-    closedReason
+    borrowerUsername
     createdAt
-    handoffId
     id
-    isActive
     lastMessageAt
+    lastMessagePreview
+    lenderEmail
     lenderId
     lenderUnreadCount
+    lenderUsername
+    loanRequest {
+      approvedDuration
+      bookId
+      completedAt
+      createdAt
+      dueDate
+      id
+      lenderId
+      message
+      proposedDuration
+      requestedAt
+      requesterId
+      respondedAt
+      status
+      updatedAt
+      __typename
+    }
     loanRequestId
-    stage
+    messages {
+      nextToken
+      __typename
+    }
     updatedAt
     __typename
   }
 }
 ` as GeneratedSubscription<
-  APITypes.OnCreateLoanChatSubscriptionVariables,
-  APITypes.OnCreateLoanChatSubscription
+  APITypes.OnCreateChatSubscriptionVariables,
+  APITypes.OnCreateChatSubscription
 >;
 export const onCreateLoanHandoff = /* GraphQL */ `subscription OnCreateLoanHandoff(
   $filter: ModelSubscriptionLoanHandoffFilterInput
-  $owner: String
+  $lenderId: String
+  $requesterId: String
 ) {
-  onCreateLoanHandoff(filter: $filter, owner: $owner) {
+  onCreateLoanHandoff(
+    filter: $filter
+    lenderId: $lenderId
+    requesterId: $requesterId
+  ) {
     borrowerConfirmed
     borrowerConfirmedAt
     completedAt
@@ -132,9 +135,10 @@ export const onCreateLoanHandoff = /* GraphQL */ `subscription OnCreateLoanHando
     id
     lenderConfirmed
     lenderConfirmedAt
+    lenderId
     loanRequestId
     meetingLocation
-    owner
+    requesterId
     scheduledTime
     updatedAt
     __typename
@@ -146,18 +150,39 @@ export const onCreateLoanHandoff = /* GraphQL */ `subscription OnCreateLoanHando
 >;
 export const onCreateLoanRequest = /* GraphQL */ `subscription OnCreateLoanRequest(
   $filter: ModelSubscriptionLoanRequestFilterInput
-  $owner: String
+  $lenderId: String
+  $requesterId: String
 ) {
-  onCreateLoanRequest(filter: $filter, owner: $owner) {
+  onCreateLoanRequest(
+    filter: $filter
+    lenderId: $lenderId
+    requesterId: $requesterId
+  ) {
     approvedDuration
     bookId
+    chat {
+      borrowerEmail
+      borrowerId
+      borrowerUnreadCount
+      borrowerUsername
+      createdAt
+      id
+      lastMessageAt
+      lastMessagePreview
+      lenderEmail
+      lenderId
+      lenderUnreadCount
+      lenderUsername
+      loanRequestId
+      updatedAt
+      __typename
+    }
     completedAt
     createdAt
     dueDate
     id
     lenderId
     message
-    owner
     proposedDuration
     requestedAt
     requesterId
@@ -170,6 +195,53 @@ export const onCreateLoanRequest = /* GraphQL */ `subscription OnCreateLoanReque
 ` as GeneratedSubscription<
   APITypes.OnCreateLoanRequestSubscriptionVariables,
   APITypes.OnCreateLoanRequestSubscription
+>;
+export const onCreateMessage = /* GraphQL */ `subscription OnCreateMessage(
+  $borrowerId: String
+  $filter: ModelSubscriptionMessageFilterInput
+  $lenderId: String
+) {
+  onCreateMessage(
+    borrowerId: $borrowerId
+    filter: $filter
+    lenderId: $lenderId
+  ) {
+    borrowerId
+    chat {
+      borrowerEmail
+      borrowerId
+      borrowerUnreadCount
+      borrowerUsername
+      createdAt
+      id
+      lastMessageAt
+      lastMessagePreview
+      lenderEmail
+      lenderId
+      lenderUnreadCount
+      lenderUsername
+      loanRequestId
+      updatedAt
+      __typename
+    }
+    chatId
+    content
+    createdAt
+    id
+    isRead
+    lenderId
+    messageType
+    readAt
+    senderEmail
+    senderId
+    senderUsername
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnCreateMessageSubscriptionVariables,
+  APITypes.OnCreateMessageSubscription
 >;
 export const onCreateNotification = /* GraphQL */ `subscription OnCreateNotification(
   $filter: ModelSubscriptionNotificationFilterInput
@@ -300,61 +372,64 @@ export const onDeleteBook = /* GraphQL */ `subscription OnDeleteBook(
   APITypes.OnDeleteBookSubscriptionVariables,
   APITypes.OnDeleteBookSubscription
 >;
-export const onDeleteChatMessage = /* GraphQL */ `subscription OnDeleteChatMessage(
-  $filter: ModelSubscriptionChatMessageFilterInput
+export const onDeleteChat = /* GraphQL */ `subscription OnDeleteChat(
+  $borrowerId: String
+  $filter: ModelSubscriptionChatFilterInput
+  $lenderId: String
 ) {
-  onDeleteChatMessage(filter: $filter) {
-    chatId
-    content
-    createdAt
-    editedAt
-    id
-    isEdited
-    isRead
-    isSystemMessage
-    messageType
-    metadata
-    readAt
-    senderId
-    senderRole
-    updatedAt
-    __typename
-  }
-}
-` as GeneratedSubscription<
-  APITypes.OnDeleteChatMessageSubscriptionVariables,
-  APITypes.OnDeleteChatMessageSubscription
->;
-export const onDeleteLoanChat = /* GraphQL */ `subscription OnDeleteLoanChat($filter: ModelSubscriptionLoanChatFilterInput) {
-  onDeleteLoanChat(filter: $filter) {
-    activeLoanId
-    bookId
+  onDeleteChat(borrowerId: $borrowerId, filter: $filter, lenderId: $lenderId) {
+    borrowerEmail
     borrowerId
     borrowerUnreadCount
-    closedAt
-    closedReason
+    borrowerUsername
     createdAt
-    handoffId
     id
-    isActive
     lastMessageAt
+    lastMessagePreview
+    lenderEmail
     lenderId
     lenderUnreadCount
+    lenderUsername
+    loanRequest {
+      approvedDuration
+      bookId
+      completedAt
+      createdAt
+      dueDate
+      id
+      lenderId
+      message
+      proposedDuration
+      requestedAt
+      requesterId
+      respondedAt
+      status
+      updatedAt
+      __typename
+    }
     loanRequestId
-    stage
+    messages {
+      nextToken
+      __typename
+    }
     updatedAt
     __typename
   }
 }
 ` as GeneratedSubscription<
-  APITypes.OnDeleteLoanChatSubscriptionVariables,
-  APITypes.OnDeleteLoanChatSubscription
+  APITypes.OnDeleteChatSubscriptionVariables,
+  APITypes.OnDeleteChatSubscription
 >;
 export const onDeleteLoanHandoff = /* GraphQL */ `subscription OnDeleteLoanHandoff(
   $filter: ModelSubscriptionLoanHandoffFilterInput
-  $owner: String
+  $lenderId: String
+  $requesterId: String
 ) {
-  onDeleteLoanHandoff(filter: $filter, owner: $owner) {
+  onDeleteLoanHandoff(
+    filter: $filter
+    lenderId: $lenderId
+    requesterId: $requesterId
+  ) {
     borrowerConfirmed
     borrowerConfirmedAt
     completedAt
@@ -362,9 +437,10 @@ export const onDeleteLoanHandoff = /* GraphQL */ `subscription OnDeleteLoanHando
     id
     lenderConfirmed
     lenderConfirmedAt
+    lenderId
     loanRequestId
     meetingLocation
-    owner
+    requesterId
     scheduledTime
     updatedAt
     __typename
@@ -376,18 +452,39 @@ export const onDeleteLoanHandoff = /* GraphQL */ `subscription OnDeleteLoanHando
 >;
 export const onDeleteLoanRequest = /* GraphQL */ `subscription OnDeleteLoanRequest(
   $filter: ModelSubscriptionLoanRequestFilterInput
-  $owner: String
+  $lenderId: String
+  $requesterId: String
 ) {
-  onDeleteLoanRequest(filter: $filter, owner: $owner) {
+  onDeleteLoanRequest(
+    filter: $filter
+    lenderId: $lenderId
+    requesterId: $requesterId
+  ) {
     approvedDuration
     bookId
+    chat {
+      borrowerEmail
+      borrowerId
+      borrowerUnreadCount
+      borrowerUsername
+      createdAt
+      id
+      lastMessageAt
+      lastMessagePreview
+      lenderEmail
+      lenderId
+      lenderUnreadCount
+      lenderUsername
+      loanRequestId
+      updatedAt
+      __typename
+    }
     completedAt
     createdAt
     dueDate
     id
     lenderId
     message
-    owner
     proposedDuration
     requestedAt
     requesterId
@@ -400,6 +497,53 @@ export const onDeleteLoanRequest = /* GraphQL */ `subscription OnDeleteLoanReque
 ` as GeneratedSubscription<
   APITypes.OnDeleteLoanRequestSubscriptionVariables,
   APITypes.OnDeleteLoanRequestSubscription
+>;
+export const onDeleteMessage = /* GraphQL */ `subscription OnDeleteMessage(
+  $borrowerId: String
+  $filter: ModelSubscriptionMessageFilterInput
+  $lenderId: String
+) {
+  onDeleteMessage(
+    borrowerId: $borrowerId
+    filter: $filter
+    lenderId: $lenderId
+  ) {
+    borrowerId
+    chat {
+      borrowerEmail
+      borrowerId
+      borrowerUnreadCount
+      borrowerUsername
+      createdAt
+      id
+      lastMessageAt
+      lastMessagePreview
+      lenderEmail
+      lenderId
+      lenderUnreadCount
+      lenderUsername
+      loanRequestId
+      updatedAt
+      __typename
+    }
+    chatId
+    content
+    createdAt
+    id
+    isRead
+    lenderId
+    messageType
+    readAt
+    senderEmail
+    senderId
+    senderUsername
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnDeleteMessageSubscriptionVariables,
+  APITypes.OnDeleteMessageSubscription
 >;
 export const onDeleteNotification = /* GraphQL */ `subscription OnDeleteNotification(
   $filter: ModelSubscriptionNotificationFilterInput
@@ -530,61 +674,64 @@ export const onUpdateBook = /* GraphQL */ `subscription OnUpdateBook(
   APITypes.OnUpdateBookSubscriptionVariables,
   APITypes.OnUpdateBookSubscription
 >;
-export const onUpdateChatMessage = /* GraphQL */ `subscription OnUpdateChatMessage(
-  $filter: ModelSubscriptionChatMessageFilterInput
+export const onUpdateChat = /* GraphQL */ `subscription OnUpdateChat(
+  $borrowerId: String
+  $filter: ModelSubscriptionChatFilterInput
+  $lenderId: String
 ) {
-  onUpdateChatMessage(filter: $filter) {
-    chatId
-    content
-    createdAt
-    editedAt
-    id
-    isEdited
-    isRead
-    isSystemMessage
-    messageType
-    metadata
-    readAt
-    senderId
-    senderRole
-    updatedAt
-    __typename
-  }
-}
-` as GeneratedSubscription<
-  APITypes.OnUpdateChatMessageSubscriptionVariables,
-  APITypes.OnUpdateChatMessageSubscription
->;
-export const onUpdateLoanChat = /* GraphQL */ `subscription OnUpdateLoanChat($filter: ModelSubscriptionLoanChatFilterInput) {
-  onUpdateLoanChat(filter: $filter) {
-    activeLoanId
-    bookId
+  onUpdateChat(borrowerId: $borrowerId, filter: $filter, lenderId: $lenderId) {
+    borrowerEmail
     borrowerId
     borrowerUnreadCount
-    closedAt
-    closedReason
+    borrowerUsername
     createdAt
-    handoffId
     id
-    isActive
     lastMessageAt
+    lastMessagePreview
+    lenderEmail
     lenderId
     lenderUnreadCount
+    lenderUsername
+    loanRequest {
+      approvedDuration
+      bookId
+      completedAt
+      createdAt
+      dueDate
+      id
+      lenderId
+      message
+      proposedDuration
+      requestedAt
+      requesterId
+      respondedAt
+      status
+      updatedAt
+      __typename
+    }
     loanRequestId
-    stage
+    messages {
+      nextToken
+      __typename
+    }
     updatedAt
     __typename
   }
 }
 ` as GeneratedSubscription<
-  APITypes.OnUpdateLoanChatSubscriptionVariables,
-  APITypes.OnUpdateLoanChatSubscription
+  APITypes.OnUpdateChatSubscriptionVariables,
+  APITypes.OnUpdateChatSubscription
 >;
 export const onUpdateLoanHandoff = /* GraphQL */ `subscription OnUpdateLoanHandoff(
   $filter: ModelSubscriptionLoanHandoffFilterInput
-  $owner: String
+  $lenderId: String
+  $requesterId: String
 ) {
-  onUpdateLoanHandoff(filter: $filter, owner: $owner) {
+  onUpdateLoanHandoff(
+    filter: $filter
+    lenderId: $lenderId
+    requesterId: $requesterId
+  ) {
     borrowerConfirmed
     borrowerConfirmedAt
     completedAt
@@ -592,9 +739,10 @@ export const onUpdateLoanHandoff = /* GraphQL */ `subscription OnUpdateLoanHando
     id
     lenderConfirmed
     lenderConfirmedAt
+    lenderId
     loanRequestId
     meetingLocation
-    owner
+    requesterId
     scheduledTime
     updatedAt
     __typename
@@ -606,18 +754,39 @@ export const onUpdateLoanHandoff = /* GraphQL */ `subscription OnUpdateLoanHando
 >;
 export const onUpdateLoanRequest = /* GraphQL */ `subscription OnUpdateLoanRequest(
   $filter: ModelSubscriptionLoanRequestFilterInput
-  $owner: String
+  $lenderId: String
+  $requesterId: String
 ) {
-  onUpdateLoanRequest(filter: $filter, owner: $owner) {
+  onUpdateLoanRequest(
+    filter: $filter
+    lenderId: $lenderId
+    requesterId: $requesterId
+  ) {
     approvedDuration
     bookId
+    chat {
+      borrowerEmail
+      borrowerId
+      borrowerUnreadCount
+      borrowerUsername
+      createdAt
+      id
+      lastMessageAt
+      lastMessagePreview
+      lenderEmail
+      lenderId
+      lenderUnreadCount
+      lenderUsername
+      loanRequestId
+      updatedAt
+      __typename
+    }
     completedAt
     createdAt
     dueDate
     id
     lenderId
     message
-    owner
     proposedDuration
     requestedAt
     requesterId
@@ -630,6 +799,53 @@ export const onUpdateLoanRequest = /* GraphQL */ `subscription OnUpdateLoanReque
 ` as GeneratedSubscription<
   APITypes.OnUpdateLoanRequestSubscriptionVariables,
   APITypes.OnUpdateLoanRequestSubscription
+>;
+export const onUpdateMessage = /* GraphQL */ `subscription OnUpdateMessage(
+  $borrowerId: String
+  $filter: ModelSubscriptionMessageFilterInput
+  $lenderId: String
+) {
+  onUpdateMessage(
+    borrowerId: $borrowerId
+    filter: $filter
+    lenderId: $lenderId
+  ) {
+    borrowerId
+    chat {
+      borrowerEmail
+      borrowerId
+      borrowerUnreadCount
+      borrowerUsername
+      createdAt
+      id
+      lastMessageAt
+      lastMessagePreview
+      lenderEmail
+      lenderId
+      lenderUnreadCount
+      lenderUsername
+      loanRequestId
+      updatedAt
+      __typename
+    }
+    chatId
+    content
+    createdAt
+    id
+    isRead
+    lenderId
+    messageType
+    readAt
+    senderEmail
+    senderId
+    senderUsername
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnUpdateMessageSubscriptionVariables,
+  APITypes.OnUpdateMessageSubscription
 >;
 export const onUpdateNotification = /* GraphQL */ `subscription OnUpdateNotification(
   $filter: ModelSubscriptionNotificationFilterInput

@@ -61,54 +61,47 @@ export const getBook = /* GraphQL */ `query GetBook($id: ID!) {
   }
 }
 ` as GeneratedQuery<APITypes.GetBookQueryVariables, APITypes.GetBookQuery>;
-export const getChatMessage = /* GraphQL */ `query GetChatMessage($id: ID!) {
-  getChatMessage(id: $id) {
-    chatId
-    content
-    createdAt
-    editedAt
-    id
-    isEdited
-    isRead
-    isSystemMessage
-    messageType
-    metadata
-    readAt
-    senderId
-    senderRole
-    updatedAt
-    __typename
-  }
-}
-` as GeneratedQuery<
-  APITypes.GetChatMessageQueryVariables,
-  APITypes.GetChatMessageQuery
->;
-export const getLoanChat = /* GraphQL */ `query GetLoanChat($id: ID!) {
-  getLoanChat(id: $id) {
-    activeLoanId
-    bookId
+export const getChat = /* GraphQL */ `query GetChat($id: ID!) {
+  getChat(id: $id) {
+    borrowerEmail
     borrowerId
     borrowerUnreadCount
-    closedAt
-    closedReason
+    borrowerUsername
     createdAt
-    handoffId
     id
-    isActive
     lastMessageAt
+    lastMessagePreview
+    lenderEmail
     lenderId
     lenderUnreadCount
+    lenderUsername
+    loanRequest {
+      approvedDuration
+      bookId
+      completedAt
+      createdAt
+      dueDate
+      id
+      lenderId
+      message
+      proposedDuration
+      requestedAt
+      requesterId
+      respondedAt
+      status
+      updatedAt
+      __typename
+    }
     loanRequestId
-    stage
+    messages {
+      nextToken
+      __typename
+    }
     updatedAt
     __typename
   }
 }
-` as GeneratedQuery<
-  APITypes.GetLoanChatQueryVariables,
-  APITypes.GetLoanChatQuery
->;
+` as GeneratedQuery<APITypes.GetChatQueryVariables, APITypes.GetChatQuery>;
 export const getLoanHandoff = /* GraphQL */ `query GetLoanHandoff($id: ID!) {
   getLoanHandoff(id: $id) {
     borrowerConfirmed
@@ -118,9 +111,10 @@ export const getLoanHandoff = /* GraphQL */ `query GetLoanHandoff($id: ID!) {
     id
     lenderConfirmed
     lenderConfirmedAt
+    lenderId
     loanRequestId
     meetingLocation
-    owner
+    requesterId
     scheduledTime
     updatedAt
     __typename
@@ -134,13 +128,29 @@ export const getLoanRequest = /* GraphQL */ `query GetLoanRequest($id: ID!) {
   getLoanRequest(id: $id) {
     approvedDuration
     bookId
+    chat {
+      borrowerEmail
+      borrowerId
+      borrowerUnreadCount
+      borrowerUsername
+      createdAt
+      id
+      lastMessageAt
+      lastMessagePreview
+      lenderEmail
+      lenderId
+      lenderUnreadCount
+      lenderUsername
+      loanRequestId
+      updatedAt
+      __typename
+    }
     completedAt
     createdAt
     dueDate
     id
     lenderId
     message
-    owner
     proposedDuration
     requestedAt
     requesterId
@@ -153,6 +163,45 @@ export const getLoanRequest = /* GraphQL */ `query GetLoanRequest($id: ID!) {
 ` as GeneratedQuery<
   APITypes.GetLoanRequestQueryVariables,
   APITypes.GetLoanRequestQuery
+>;
+export const getMessage = /* GraphQL */ `query GetMessage($id: ID!) {
+  getMessage(id: $id) {
+    borrowerId
+    chat {
+      borrowerEmail
+      borrowerId
+      borrowerUnreadCount
+      borrowerUsername
+      createdAt
+      id
+      lastMessageAt
+      lastMessagePreview
+      lenderEmail
+      lenderId
+      lenderUnreadCount
+      lenderUsername
+      loanRequestId
+      updatedAt
+      __typename
+    }
+    chatId
+    content
+    createdAt
+    id
+    isRead
+    lenderId
+    messageType
+    readAt
+    senderEmail
+    senderId
+    senderUsername
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.GetMessageQueryVariables,
+  APITypes.GetMessageQuery
 >;
 export const getNotification = /* GraphQL */ `query GetNotification($id: ID!) {
   getNotification(id: $id) {
@@ -292,59 +341,26 @@ export const listBooks = /* GraphQL */ `query ListBooks(
   }
 }
 ` as GeneratedQuery<APITypes.ListBooksQueryVariables, APITypes.ListBooksQuery>;
-export const listChatMessages = /* GraphQL */ `query ListChatMessages(
-  $filter: ModelChatMessageFilterInput
+export const listChats = /* GraphQL */ `query ListChats(
+  $filter: ModelChatFilterInput
   $limit: Int
   $nextToken: String
 ) {
-  listChatMessages(filter: $filter, limit: $limit, nextToken: $nextToken) {
+  listChats(filter: $filter, limit: $limit, nextToken: $nextToken) {
     items {
-      chatId
-      content
-      createdAt
-      editedAt
-      id
-      isEdited
-      isRead
-      isSystemMessage
-      messageType
-      metadata
-      readAt
-      senderId
-      senderRole
-      updatedAt
-      __typename
-    }
-    nextToken
-    __typename
-  }
-}
-` as GeneratedQuery<
-  APITypes.ListChatMessagesQueryVariables,
-  APITypes.ListChatMessagesQuery
->;
-export const listLoanChats = /* GraphQL */ `query ListLoanChats(
-  $filter: ModelLoanChatFilterInput
-  $limit: Int
-  $nextToken: String
-) {
-  listLoanChats(filter: $filter, limit: $limit, nextToken: $nextToken) {
-    items {
-      activeLoanId
-      bookId
+      borrowerEmail
       borrowerId
       borrowerUnreadCount
-      closedAt
-      closedReason
+      borrowerUsername
       createdAt
-      handoffId
       id
-      isActive
       lastMessageAt
+      lastMessagePreview
+      lenderEmail
       lenderId
       lenderUnreadCount
+      lenderUsername
       loanRequestId
-      stage
       updatedAt
       __typename
     }
@@ -352,10 +368,7 @@ export const listLoanChats = /* GraphQL */ `query ListLoanChats(
     __typename
   }
 }
-` as GeneratedQuery<
-  APITypes.ListLoanChatsQueryVariables,
-  APITypes.ListLoanChatsQuery
->;
+` as GeneratedQuery<APITypes.ListChatsQueryVariables, APITypes.ListChatsQuery>;
 export const listLoanHandoffs = /* GraphQL */ `query ListLoanHandoffs(
   $filter: ModelLoanHandoffFilterInput
   $limit: Int
@@ -370,9 +383,10 @@ export const listLoanHandoffs = /* GraphQL */ `query ListLoanHandoffs(
       id
       lenderConfirmed
       lenderConfirmedAt
+      lenderId
       loanRequestId
       meetingLocation
-      owner
+      requesterId
       scheduledTime
       updatedAt
       __typename
@@ -400,7 +414,6 @@ export const listLoanRequests = /* GraphQL */ `query ListLoanRequests(
       id
       lenderId
       message
-      owner
       proposedDuration
       requestedAt
       requesterId
@@ -416,6 +429,36 @@ export const listLoanRequests = /* GraphQL */ `query ListLoanRequests(
 ` as GeneratedQuery<
   APITypes.ListLoanRequestsQueryVariables,
   APITypes.ListLoanRequestsQuery
+>;
+export const listMessages = /* GraphQL */ `query ListMessages(
+  $filter: ModelMessageFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  listMessages(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    items {
+      borrowerId
+      chatId
+      content
+      createdAt
+      id
+      isRead
+      lenderId
+      messageType
+      readAt
+      senderEmail
+      senderId
+      senderUsername
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.ListMessagesQueryVariables,
+  APITypes.ListMessagesQuery
 >;
 export const listNotifications = /* GraphQL */ `query ListNotifications(
   $filter: ModelNotificationFilterInput

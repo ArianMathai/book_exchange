@@ -16,6 +16,7 @@ import { client } from '@/lib/amplifyClient';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNotifications } from '@/context/notificationsContext';
+import LoanChat from '@/components/chat/LoanChat';
 
 //TODO: This is a work in progress. LoanHandoff is not working correctly yet. Also need to establish messaging between the users
 const LoanHandoffPage: React.FC = () => {
@@ -212,7 +213,7 @@ const LoanHandoffPage: React.FC = () => {
     }
 
     return (
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="max-w-7xl mx-auto p-6">
             {/* Header */}
             <div className="mb-6">
                 <Button 
@@ -234,7 +235,7 @@ const LoanHandoffPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-6">
+            <div className="grid lg:grid-cols-3 gap-6">
                 {/* Book & Participants Info */}
                 <div className="space-y-6">
                     {/* Book Information */}
@@ -267,6 +268,11 @@ const LoanHandoffPage: React.FC = () => {
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* Chat Section */}
+                    <div className="lg:col-span-1">
+                        <LoanChat loanRequest={loanRequest} />
+                    </div>
 
                     {/* Participants */}
                     <Card>

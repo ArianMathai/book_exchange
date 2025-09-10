@@ -8,6 +8,28 @@ type GeneratedMutation<InputType, OutputType> = string & {
   __generatedMutationOutput: OutputType;
 };
 
+export const approveLoanRequestMutation = /* GraphQL */ `mutation ApproveLoanRequestMutation(
+  $approvedDuration: Int!
+  $loanRequestId: String!
+  $userName: String!
+) {
+  approveLoanRequestMutation(
+    approvedDuration: $approvedDuration
+    loanRequestId: $loanRequestId
+    userName: $userName
+  ) {
+    chatId
+    error
+    loanRequestId
+    message
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.ApproveLoanRequestMutationMutationVariables,
+  APITypes.ApproveLoanRequestMutationMutation
+>;
 export const createActiveLoan = /* GraphQL */ `mutation CreateActiveLoan(
   $condition: ModelActiveLoanConditionInput
   $input: CreateActiveLoanInput!
@@ -70,59 +92,52 @@ export const createBook = /* GraphQL */ `mutation CreateBook(
   APITypes.CreateBookMutationVariables,
   APITypes.CreateBookMutation
 >;
-export const createChatMessage = /* GraphQL */ `mutation CreateChatMessage(
-  $condition: ModelChatMessageConditionInput
-  $input: CreateChatMessageInput!
+export const createChat = /* GraphQL */ `mutation CreateChat(
+  $condition: ModelChatConditionInput
+  $input: CreateChatInput!
 ) {
-  createChatMessage(condition: $condition, input: $input) {
-    chatId
-    content
-    createdAt
-    editedAt
-    id
-    isEdited
-    isRead
-    isSystemMessage
-    messageType
-    metadata
-    readAt
-    senderId
-    senderRole
-    updatedAt
-    __typename
-  }
-}
-` as GeneratedMutation<
-  APITypes.CreateChatMessageMutationVariables,
-  APITypes.CreateChatMessageMutation
->;
-export const createLoanChat = /* GraphQL */ `mutation CreateLoanChat(
-  $condition: ModelLoanChatConditionInput
-  $input: CreateLoanChatInput!
-) {
-  createLoanChat(condition: $condition, input: $input) {
-    activeLoanId
-    bookId
+  createChat(condition: $condition, input: $input) {
+    borrowerEmail
     borrowerId
     borrowerUnreadCount
-    closedAt
-    closedReason
+    borrowerUsername
     createdAt
-    handoffId
     id
-    isActive
     lastMessageAt
+    lastMessagePreview
+    lenderEmail
     lenderId
     lenderUnreadCount
+    lenderUsername
+    loanRequest {
+      approvedDuration
+      bookId
+      completedAt
+      createdAt
+      dueDate
+      id
+      lenderId
+      message
+      proposedDuration
+      requestedAt
+      requesterId
+      respondedAt
+      status
+      updatedAt
+      __typename
+    }
     loanRequestId
-    stage
+    messages {
+      nextToken
+      __typename
+    }
     updatedAt
     __typename
   }
 }
 ` as GeneratedMutation<
-  APITypes.CreateLoanChatMutationVariables,
-  APITypes.CreateLoanChatMutation
+  APITypes.CreateChatMutationVariables,
+  APITypes.CreateChatMutation
 >;
 export const createLoanHandoff = /* GraphQL */ `mutation CreateLoanHandoff(
   $condition: ModelLoanHandoffConditionInput
@@ -136,9 +151,10 @@ export const createLoanHandoff = /* GraphQL */ `mutation CreateLoanHandoff(
     id
     lenderConfirmed
     lenderConfirmedAt
+    lenderId
     loanRequestId
     meetingLocation
-    owner
+    requesterId
     scheduledTime
     updatedAt
     __typename
@@ -155,13 +171,29 @@ export const createLoanRequest = /* GraphQL */ `mutation CreateLoanRequest(
   createLoanRequest(condition: $condition, input: $input) {
     approvedDuration
     bookId
+    chat {
+      borrowerEmail
+      borrowerId
+      borrowerUnreadCount
+      borrowerUsername
+      createdAt
+      id
+      lastMessageAt
+      lastMessagePreview
+      lenderEmail
+      lenderId
+      lenderUnreadCount
+      lenderUsername
+      loanRequestId
+      updatedAt
+      __typename
+    }
     completedAt
     createdAt
     dueDate
     id
     lenderId
     message
-    owner
     proposedDuration
     requestedAt
     requesterId
@@ -174,6 +206,48 @@ export const createLoanRequest = /* GraphQL */ `mutation CreateLoanRequest(
 ` as GeneratedMutation<
   APITypes.CreateLoanRequestMutationVariables,
   APITypes.CreateLoanRequestMutation
+>;
+export const createMessage = /* GraphQL */ `mutation CreateMessage(
+  $condition: ModelMessageConditionInput
+  $input: CreateMessageInput!
+) {
+  createMessage(condition: $condition, input: $input) {
+    borrowerId
+    chat {
+      borrowerEmail
+      borrowerId
+      borrowerUnreadCount
+      borrowerUsername
+      createdAt
+      id
+      lastMessageAt
+      lastMessagePreview
+      lenderEmail
+      lenderId
+      lenderUnreadCount
+      lenderUsername
+      loanRequestId
+      updatedAt
+      __typename
+    }
+    chatId
+    content
+    createdAt
+    id
+    isRead
+    lenderId
+    messageType
+    readAt
+    senderEmail
+    senderId
+    senderUsername
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.CreateMessageMutationVariables,
+  APITypes.CreateMessageMutation
 >;
 export const createNotification = /* GraphQL */ `mutation CreateNotification(
   $condition: ModelNotificationConditionInput
@@ -304,59 +378,52 @@ export const deleteBook = /* GraphQL */ `mutation DeleteBook(
   APITypes.DeleteBookMutationVariables,
   APITypes.DeleteBookMutation
 >;
-export const deleteChatMessage = /* GraphQL */ `mutation DeleteChatMessage(
-  $condition: ModelChatMessageConditionInput
-  $input: DeleteChatMessageInput!
+export const deleteChat = /* GraphQL */ `mutation DeleteChat(
+  $condition: ModelChatConditionInput
+  $input: DeleteChatInput!
 ) {
-  deleteChatMessage(condition: $condition, input: $input) {
-    chatId
-    content
-    createdAt
-    editedAt
-    id
-    isEdited
-    isRead
-    isSystemMessage
-    messageType
-    metadata
-    readAt
-    senderId
-    senderRole
-    updatedAt
-    __typename
-  }
-}
-` as GeneratedMutation<
-  APITypes.DeleteChatMessageMutationVariables,
-  APITypes.DeleteChatMessageMutation
->;
-export const deleteLoanChat = /* GraphQL */ `mutation DeleteLoanChat(
-  $condition: ModelLoanChatConditionInput
-  $input: DeleteLoanChatInput!
-) {
-  deleteLoanChat(condition: $condition, input: $input) {
-    activeLoanId
-    bookId
+  deleteChat(condition: $condition, input: $input) {
+    borrowerEmail
     borrowerId
     borrowerUnreadCount
-    closedAt
-    closedReason
+    borrowerUsername
     createdAt
-    handoffId
     id
-    isActive
     lastMessageAt
+    lastMessagePreview
+    lenderEmail
     lenderId
     lenderUnreadCount
+    lenderUsername
+    loanRequest {
+      approvedDuration
+      bookId
+      completedAt
+      createdAt
+      dueDate
+      id
+      lenderId
+      message
+      proposedDuration
+      requestedAt
+      requesterId
+      respondedAt
+      status
+      updatedAt
+      __typename
+    }
     loanRequestId
-    stage
+    messages {
+      nextToken
+      __typename
+    }
     updatedAt
     __typename
   }
 }
 ` as GeneratedMutation<
-  APITypes.DeleteLoanChatMutationVariables,
-  APITypes.DeleteLoanChatMutation
+  APITypes.DeleteChatMutationVariables,
+  APITypes.DeleteChatMutation
 >;
 export const deleteLoanHandoff = /* GraphQL */ `mutation DeleteLoanHandoff(
   $condition: ModelLoanHandoffConditionInput
@@ -370,9 +437,10 @@ export const deleteLoanHandoff = /* GraphQL */ `mutation DeleteLoanHandoff(
     id
     lenderConfirmed
     lenderConfirmedAt
+    lenderId
     loanRequestId
     meetingLocation
-    owner
+    requesterId
     scheduledTime
     updatedAt
     __typename
@@ -389,13 +457,29 @@ export const deleteLoanRequest = /* GraphQL */ `mutation DeleteLoanRequest(
   deleteLoanRequest(condition: $condition, input: $input) {
     approvedDuration
     bookId
+    chat {
+      borrowerEmail
+      borrowerId
+      borrowerUnreadCount
+      borrowerUsername
+      createdAt
+      id
+      lastMessageAt
+      lastMessagePreview
+      lenderEmail
+      lenderId
+      lenderUnreadCount
+      lenderUsername
+      loanRequestId
+      updatedAt
+      __typename
+    }
     completedAt
     createdAt
     dueDate
     id
     lenderId
     message
-    owner
     proposedDuration
     requestedAt
     requesterId
@@ -408,6 +492,48 @@ export const deleteLoanRequest = /* GraphQL */ `mutation DeleteLoanRequest(
 ` as GeneratedMutation<
   APITypes.DeleteLoanRequestMutationVariables,
   APITypes.DeleteLoanRequestMutation
+>;
+export const deleteMessage = /* GraphQL */ `mutation DeleteMessage(
+  $condition: ModelMessageConditionInput
+  $input: DeleteMessageInput!
+) {
+  deleteMessage(condition: $condition, input: $input) {
+    borrowerId
+    chat {
+      borrowerEmail
+      borrowerId
+      borrowerUnreadCount
+      borrowerUsername
+      createdAt
+      id
+      lastMessageAt
+      lastMessagePreview
+      lenderEmail
+      lenderId
+      lenderUnreadCount
+      lenderUsername
+      loanRequestId
+      updatedAt
+      __typename
+    }
+    chatId
+    content
+    createdAt
+    id
+    isRead
+    lenderId
+    messageType
+    readAt
+    senderEmail
+    senderId
+    senderUsername
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.DeleteMessageMutationVariables,
+  APITypes.DeleteMessageMutation
 >;
 export const deleteNotification = /* GraphQL */ `mutation DeleteNotification(
   $condition: ModelNotificationConditionInput
@@ -538,59 +664,52 @@ export const updateBook = /* GraphQL */ `mutation UpdateBook(
   APITypes.UpdateBookMutationVariables,
   APITypes.UpdateBookMutation
 >;
-export const updateChatMessage = /* GraphQL */ `mutation UpdateChatMessage(
-  $condition: ModelChatMessageConditionInput
-  $input: UpdateChatMessageInput!
+export const updateChat = /* GraphQL */ `mutation UpdateChat(
+  $condition: ModelChatConditionInput
+  $input: UpdateChatInput!
 ) {
-  updateChatMessage(condition: $condition, input: $input) {
-    chatId
-    content
-    createdAt
-    editedAt
-    id
-    isEdited
-    isRead
-    isSystemMessage
-    messageType
-    metadata
-    readAt
-    senderId
-    senderRole
-    updatedAt
-    __typename
-  }
-}
-` as GeneratedMutation<
-  APITypes.UpdateChatMessageMutationVariables,
-  APITypes.UpdateChatMessageMutation
->;
-export const updateLoanChat = /* GraphQL */ `mutation UpdateLoanChat(
-  $condition: ModelLoanChatConditionInput
-  $input: UpdateLoanChatInput!
-) {
-  updateLoanChat(condition: $condition, input: $input) {
-    activeLoanId
-    bookId
+  updateChat(condition: $condition, input: $input) {
+    borrowerEmail
     borrowerId
     borrowerUnreadCount
-    closedAt
-    closedReason
+    borrowerUsername
     createdAt
-    handoffId
     id
-    isActive
     lastMessageAt
+    lastMessagePreview
+    lenderEmail
     lenderId
     lenderUnreadCount
+    lenderUsername
+    loanRequest {
+      approvedDuration
+      bookId
+      completedAt
+      createdAt
+      dueDate
+      id
+      lenderId
+      message
+      proposedDuration
+      requestedAt
+      requesterId
+      respondedAt
+      status
+      updatedAt
+      __typename
+    }
     loanRequestId
-    stage
+    messages {
+      nextToken
+      __typename
+    }
     updatedAt
     __typename
   }
 }
 ` as GeneratedMutation<
-  APITypes.UpdateLoanChatMutationVariables,
-  APITypes.UpdateLoanChatMutation
+  APITypes.UpdateChatMutationVariables,
+  APITypes.UpdateChatMutation
 >;
 export const updateLoanHandoff = /* GraphQL */ `mutation UpdateLoanHandoff(
   $condition: ModelLoanHandoffConditionInput
@@ -604,9 +723,10 @@ export const updateLoanHandoff = /* GraphQL */ `mutation UpdateLoanHandoff(
     id
     lenderConfirmed
     lenderConfirmedAt
+    lenderId
     loanRequestId
     meetingLocation
-    owner
+    requesterId
     scheduledTime
     updatedAt
     __typename
@@ -623,13 +743,29 @@ export const updateLoanRequest = /* GraphQL */ `mutation UpdateLoanRequest(
   updateLoanRequest(condition: $condition, input: $input) {
     approvedDuration
     bookId
+    chat {
+      borrowerEmail
+      borrowerId
+      borrowerUnreadCount
+      borrowerUsername
+      createdAt
+      id
+      lastMessageAt
+      lastMessagePreview
+      lenderEmail
+      lenderId
+      lenderUnreadCount
+      lenderUsername
+      loanRequestId
+      updatedAt
+      __typename
+    }
     completedAt
     createdAt
     dueDate
     id
     lenderId
     message
-    owner
     proposedDuration
     requestedAt
     requesterId
@@ -642,6 +778,48 @@ export const updateLoanRequest = /* GraphQL */ `mutation UpdateLoanRequest(
 ` as GeneratedMutation<
   APITypes.UpdateLoanRequestMutationVariables,
   APITypes.UpdateLoanRequestMutation
+>;
+export const updateMessage = /* GraphQL */ `mutation UpdateMessage(
+  $condition: ModelMessageConditionInput
+  $input: UpdateMessageInput!
+) {
+  updateMessage(condition: $condition, input: $input) {
+    borrowerId
+    chat {
+      borrowerEmail
+      borrowerId
+      borrowerUnreadCount
+      borrowerUsername
+      createdAt
+      id
+      lastMessageAt
+      lastMessagePreview
+      lenderEmail
+      lenderId
+      lenderUnreadCount
+      lenderUsername
+      loanRequestId
+      updatedAt
+      __typename
+    }
+    chatId
+    content
+    createdAt
+    id
+    isRead
+    lenderId
+    messageType
+    readAt
+    senderEmail
+    senderId
+    senderUsername
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UpdateMessageMutationVariables,
+  APITypes.UpdateMessageMutation
 >;
 export const updateNotification = /* GraphQL */ `mutation UpdateNotification(
   $condition: ModelNotificationConditionInput

@@ -64,7 +64,7 @@ function ChatInput({
         size="sm"
         className="px-3"
       >
-        <Send className="h-4 w-4" />
+        <Send className="h-5 w-5" />
         <span className="sr-only">Send message</span>
       </Button>
     </div>

@@ -55,89 +55,23 @@ export enum BookBorrowStatus {
 }
 
 
-export type ChatMessage = {
-  __typename: "ChatMessage",
-  chatId: string,
-  content: string,
-  createdAt: string,
-  editedAt?: string | null,
-  id: string,
-  isEdited?: boolean | null,
-  isRead?: boolean | null,
-  isSystemMessage?: boolean | null,
-  messageType?: ChatMessageMessageType | null,
-  metadata?: string | null,
-  readAt?: string | null,
-  senderId: string,
-  senderRole?: ChatMessageSenderRole | null,
-  updatedAt: string,
-};
-
-export enum ChatMessageMessageType {
-  location_suggestion = "location_suggestion",
-  request_extension = "request_extension",
-  return_arrangement = "return_arrangement",
-  system = "system",
-  text = "text",
-  time_suggestion = "time_suggestion",
-}
-
-
-export enum ChatMessageSenderRole {
-  borrower = "borrower",
-  lender = "lender",
-}
-
-
-export type LoanChat = {
-  __typename: "LoanChat",
-  activeLoanId?: string | null,
-  bookId: string,
+export type Chat = {
+  __typename: "Chat",
+  borrowerEmail: string,
   borrowerId: string,
   borrowerUnreadCount?: number | null,
-  closedAt?: string | null,
-  closedReason?: LoanChatClosedReason | null,
+  borrowerUsername?: string | null,
   createdAt: string,
-  handoffId?: string | null,
   id: string,
-  isActive?: boolean | null,
   lastMessageAt?: string | null,
+  lastMessagePreview?: string | null,
+  lenderEmail: string,
   lenderId: string,
   lenderUnreadCount?: number | null,
+  lenderUsername?: string | null,
+  loanRequest?: LoanRequest | null,
   loanRequestId: string,
-  stage?: LoanChatStage | null,
-  updatedAt: string,
-};
-
-export enum LoanChatClosedReason {
-  cancelled = "cancelled",
-  completed = "completed",
-  rejected = "rejected",
-}
-
-
-export enum LoanChatStage {
-  active_loan = "active_loan",
-  completed = "completed",
-  handoff = "handoff",
-  request = "request",
-  return = "return",
-}
-
-
-export type LoanHandoff = {
-  __typename: "LoanHandoff",
-  borrowerConfirmed?: boolean | null,
-  borrowerConfirmedAt?: string | null,
-  completedAt?: string | null,
-  createdAt: string,
-  id: string,
-  lenderConfirmed?: boolean | null,
-  lenderConfirmedAt?: string | null,
-  loanRequestId: string,
-  meetingLocation?: string | null,
-  owner?: string | null,
-  scheduledTime?: string | null,
+  messages?: ModelMessageConnection | null,
   updatedAt: string,
 };
 
@@ -145,13 +79,13 @@ export type LoanRequest = {
   __typename: "LoanRequest",
   approvedDuration?: number | null,
   bookId: string,
+  chat?: Chat | null,
   completedAt?: string | null,
   createdAt: string,
   dueDate?: string | null,
   id: string,
   lenderId: string,
   message?: string | null,
-  owner?: string | null,
   proposedDuration?: number | null,
   requestedAt: string,
   requesterId: string,
@@ -169,6 +103,53 @@ export enum LoanRequestStatus {
   rejected = "rejected",
 }
 
+
+export type ModelMessageConnection = {
+  __typename: "ModelMessageConnection",
+  items:  Array<Message | null >,
+  nextToken?: string | null,
+};
+
+export type Message = {
+  __typename: "Message",
+  borrowerId: string,
+  chat?: Chat | null,
+  chatId: string,
+  content: string,
+  createdAt: string,
+  id: string,
+  isRead?: boolean | null,
+  lenderId: string,
+  messageType?: MessageMessageType | null,
+  readAt?: string | null,
+  senderEmail: string,
+  senderId: string,
+  senderUsername: string,
+  updatedAt: string,
+};
+
+export enum MessageMessageType {
+  system = "system",
+  text = "text",
+}
+
+
+export type LoanHandoff = {
+  __typename: "LoanHandoff",
+  borrowerConfirmed?: boolean | null,
+  borrowerConfirmedAt?: string | null,
+  completedAt?: string | null,
+  createdAt: string,
+  id: string,
+  lenderConfirmed?: boolean | null,
+  lenderConfirmedAt?: string | null,
+  lenderId: string,
+  loanRequestId: string,
+  meetingLocation?: string | null,
+  requesterId: string,
+  scheduledTime?: string | null,
+  updatedAt: string,
+};
 
 export type Notification = {
   __typename: "Notification",
@@ -376,77 +357,29 @@ export type ModelBookConnection = {
   nextToken?: string | null,
 };
 
-export type ModelChatMessageFilterInput = {
-  and?: Array< ModelChatMessageFilterInput | null > | null,
-  chatId?: ModelStringInput | null,
-  content?: ModelStringInput | null,
-  createdAt?: ModelStringInput | null,
-  editedAt?: ModelStringInput | null,
-  id?: ModelIDInput | null,
-  isEdited?: ModelBooleanInput | null,
-  isRead?: ModelBooleanInput | null,
-  isSystemMessage?: ModelBooleanInput | null,
-  messageType?: ModelChatMessageMessageTypeInput | null,
-  metadata?: ModelStringInput | null,
-  not?: ModelChatMessageFilterInput | null,
-  or?: Array< ModelChatMessageFilterInput | null > | null,
-  readAt?: ModelStringInput | null,
-  senderId?: ModelStringInput | null,
-  senderRole?: ModelChatMessageSenderRoleInput | null,
-  updatedAt?: ModelStringInput | null,
-};
-
-export type ModelChatMessageMessageTypeInput = {
-  eq?: ChatMessageMessageType | null,
-  ne?: ChatMessageMessageType | null,
-};
-
-export type ModelChatMessageSenderRoleInput = {
-  eq?: ChatMessageSenderRole | null,
-  ne?: ChatMessageSenderRole | null,
-};
-
-export type ModelChatMessageConnection = {
-  __typename: "ModelChatMessageConnection",
-  items:  Array<ChatMessage | null >,
-  nextToken?: string | null,
-};
-
-export type ModelLoanChatFilterInput = {
-  activeLoanId?: ModelStringInput | null,
-  and?: Array< ModelLoanChatFilterInput | null > | null,
-  bookId?: ModelStringInput | null,
+export type ModelChatFilterInput = {
+  and?: Array< ModelChatFilterInput | null > | null,
+  borrowerEmail?: ModelStringInput | null,
   borrowerId?: ModelStringInput | null,
   borrowerUnreadCount?: ModelIntInput | null,
-  closedAt?: ModelStringInput | null,
-  closedReason?: ModelLoanChatClosedReasonInput | null,
+  borrowerUsername?: ModelStringInput | null,
   createdAt?: ModelStringInput | null,
-  handoffId?: ModelStringInput | null,
   id?: ModelIDInput | null,
-  isActive?: ModelBooleanInput | null,
   lastMessageAt?: ModelStringInput | null,
+  lastMessagePreview?: ModelStringInput | null,
+  lenderEmail?: ModelStringInput | null,
   lenderId?: ModelStringInput | null,
   lenderUnreadCount?: ModelIntInput | null,
-  loanRequestId?: ModelStringInput | null,
-  not?: ModelLoanChatFilterInput | null,
-  or?: Array< ModelLoanChatFilterInput | null > | null,
-  stage?: ModelLoanChatStageInput | null,
+  lenderUsername?: ModelStringInput | null,
+  loanRequestId?: ModelIDInput | null,
+  not?: ModelChatFilterInput | null,
+  or?: Array< ModelChatFilterInput | null > | null,
   updatedAt?: ModelStringInput | null,
 };
 
-export type ModelLoanChatClosedReasonInput = {
-  eq?: LoanChatClosedReason | null,
-  ne?: LoanChatClosedReason | null,
-};
-
-export type ModelLoanChatStageInput = {
-  eq?: LoanChatStage | null,
-  ne?: LoanChatStage | null,
-};
-
-export type ModelLoanChatConnection = {
-  __typename: "ModelLoanChatConnection",
-  items:  Array<LoanChat | null >,
+export type ModelChatConnection = {
+  __typename: "ModelChatConnection",
+  items:  Array<Chat | null >,
   nextToken?: string | null,
 };
 
@@ -459,11 +392,12 @@ export type ModelLoanHandoffFilterInput = {
   id?: ModelIDInput | null,
   lenderConfirmed?: ModelBooleanInput | null,
   lenderConfirmedAt?: ModelStringInput | null,
+  lenderId?: ModelStringInput | null,
   loanRequestId?: ModelStringInput | null,
   meetingLocation?: ModelStringInput | null,
   not?: ModelLoanHandoffFilterInput | null,
   or?: Array< ModelLoanHandoffFilterInput | null > | null,
-  owner?: ModelStringInput | null,
+  requesterId?: ModelStringInput | null,
   scheduledTime?: ModelStringInput | null,
   updatedAt?: ModelStringInput | null,
 };
@@ -486,7 +420,6 @@ export type ModelLoanRequestFilterInput = {
   message?: ModelStringInput | null,
   not?: ModelLoanRequestFilterInput | null,
   or?: Array< ModelLoanRequestFilterInput | null > | null,
-  owner?: ModelStringInput | null,
   proposedDuration?: ModelIntInput | null,
   requestedAt?: ModelStringInput | null,
   requesterId?: ModelStringInput | null,
@@ -504,6 +437,30 @@ export type ModelLoanRequestConnection = {
   __typename: "ModelLoanRequestConnection",
   items:  Array<LoanRequest | null >,
   nextToken?: string | null,
+};
+
+export type ModelMessageFilterInput = {
+  and?: Array< ModelMessageFilterInput | null > | null,
+  borrowerId?: ModelStringInput | null,
+  chatId?: ModelIDInput | null,
+  content?: ModelStringInput | null,
+  createdAt?: ModelStringInput | null,
+  id?: ModelIDInput | null,
+  isRead?: ModelBooleanInput | null,
+  lenderId?: ModelStringInput | null,
+  messageType?: ModelMessageMessageTypeInput | null,
+  not?: ModelMessageFilterInput | null,
+  or?: Array< ModelMessageFilterInput | null > | null,
+  readAt?: ModelStringInput | null,
+  senderEmail?: ModelStringInput | null,
+  senderId?: ModelStringInput | null,
+  senderUsername?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
+};
+
+export type ModelMessageMessageTypeInput = {
+  eq?: MessageMessageType | null,
+  ne?: MessageMessageType | null,
 };
 
 export type ModelNotificationFilterInput = {
@@ -589,6 +546,15 @@ export type AddressSuggestion = {
   __typename: "AddressSuggestion",
   description: string,
   place_id: string,
+};
+
+export type ApproveLoanRequestMutationReturnType = {
+  __typename: "ApproveLoanRequestMutationReturnType",
+  chatId?: string | null,
+  error?: string | null,
+  loanRequestId?: string | null,
+  message: string,
+  success: boolean,
 };
 
 export type ModelActiveLoanConditionInput = {
@@ -677,76 +643,38 @@ export type CreateBookInput = {
   wouldRecommend?: boolean | null,
 };
 
-export type ModelChatMessageConditionInput = {
-  and?: Array< ModelChatMessageConditionInput | null > | null,
-  chatId?: ModelStringInput | null,
-  content?: ModelStringInput | null,
-  createdAt?: ModelStringInput | null,
-  editedAt?: ModelStringInput | null,
-  isEdited?: ModelBooleanInput | null,
-  isRead?: ModelBooleanInput | null,
-  isSystemMessage?: ModelBooleanInput | null,
-  messageType?: ModelChatMessageMessageTypeInput | null,
-  metadata?: ModelStringInput | null,
-  not?: ModelChatMessageConditionInput | null,
-  or?: Array< ModelChatMessageConditionInput | null > | null,
-  readAt?: ModelStringInput | null,
-  senderId?: ModelStringInput | null,
-  senderRole?: ModelChatMessageSenderRoleInput | null,
-  updatedAt?: ModelStringInput | null,
-};
-
-export type CreateChatMessageInput = {
-  chatId: string,
-  content: string,
-  editedAt?: string | null,
-  id?: string | null,
-  isEdited?: boolean | null,
-  isRead?: boolean | null,
-  isSystemMessage?: boolean | null,
-  messageType?: ChatMessageMessageType | null,
-  metadata?: string | null,
-  readAt?: string | null,
-  senderId: string,
-  senderRole?: ChatMessageSenderRole | null,
-};
-
-export type ModelLoanChatConditionInput = {
-  activeLoanId?: ModelStringInput | null,
-  and?: Array< ModelLoanChatConditionInput | null > | null,
-  bookId?: ModelStringInput | null,
+export type ModelChatConditionInput = {
+  and?: Array< ModelChatConditionInput | null > | null,
+  borrowerEmail?: ModelStringInput | null,
   borrowerId?: ModelStringInput | null,
   borrowerUnreadCount?: ModelIntInput | null,
-  closedAt?: ModelStringInput | null,
-  closedReason?: ModelLoanChatClosedReasonInput | null,
+  borrowerUsername?: ModelStringInput | null,
   createdAt?: ModelStringInput | null,
-  handoffId?: ModelStringInput | null,
-  isActive?: ModelBooleanInput | null,
   lastMessageAt?: ModelStringInput | null,
+  lastMessagePreview?: ModelStringInput | null,
+  lenderEmail?: ModelStringInput | null,
   lenderId?: ModelStringInput | null,
   lenderUnreadCount?: ModelIntInput | null,
-  loanRequestId?: ModelStringInput | null,
-  not?: ModelLoanChatConditionInput | null,
-  or?: Array< ModelLoanChatConditionInput | null > | null,
-  stage?: ModelLoanChatStageInput | null,
+  lenderUsername?: ModelStringInput | null,
+  loanRequestId?: ModelIDInput | null,
+  not?: ModelChatConditionInput | null,
+  or?: Array< ModelChatConditionInput | null > | null,
   updatedAt?: ModelStringInput | null,
 };
 
-export type CreateLoanChatInput = {
-  activeLoanId?: string | null,
-  bookId: string,
+export type CreateChatInput = {
+  borrowerEmail: string,
   borrowerId: string,
   borrowerUnreadCount?: number | null,
-  closedAt?: string | null,
-  closedReason?: LoanChatClosedReason | null,
-  handoffId?: string | null,
+  borrowerUsername?: string | null,
   id?: string | null,
-  isActive?: boolean | null,
   lastMessageAt?: string | null,
+  lastMessagePreview?: string | null,
+  lenderEmail: string,
   lenderId: string,
   lenderUnreadCount?: number | null,
+  lenderUsername?: string | null,
   loanRequestId: string,
-  stage?: LoanChatStage | null,
 };
 
 export type ModelLoanHandoffConditionInput = {
@@ -757,11 +685,12 @@ export type ModelLoanHandoffConditionInput = {
   createdAt?: ModelStringInput | null,
   lenderConfirmed?: ModelBooleanInput | null,
   lenderConfirmedAt?: ModelStringInput | null,
+  lenderId?: ModelStringInput | null,
   loanRequestId?: ModelStringInput | null,
   meetingLocation?: ModelStringInput | null,
   not?: ModelLoanHandoffConditionInput | null,
   or?: Array< ModelLoanHandoffConditionInput | null > | null,
-  owner?: ModelStringInput | null,
+  requesterId?: ModelStringInput | null,
   scheduledTime?: ModelStringInput | null,
   updatedAt?: ModelStringInput | null,
 };
@@ -773,8 +702,10 @@ export type CreateLoanHandoffInput = {
   id?: string | null,
   lenderConfirmed?: boolean | null,
   lenderConfirmedAt?: string | null,
+  lenderId: string,
   loanRequestId: string,
   meetingLocation?: string | null,
+  requesterId: string,
   scheduledTime?: string | null,
 };
 
@@ -789,7 +720,6 @@ export type ModelLoanRequestConditionInput = {
   message?: ModelStringInput | null,
   not?: ModelLoanRequestConditionInput | null,
   or?: Array< ModelLoanRequestConditionInput | null > | null,
-  owner?: ModelStringInput | null,
   proposedDuration?: ModelIntInput | null,
   requestedAt?: ModelStringInput | null,
   requesterId?: ModelStringInput | null,
@@ -811,6 +741,38 @@ export type CreateLoanRequestInput = {
   requesterId: string,
   respondedAt?: string | null,
   status?: LoanRequestStatus | null,
+};
+
+export type ModelMessageConditionInput = {
+  and?: Array< ModelMessageConditionInput | null > | null,
+  borrowerId?: ModelStringInput | null,
+  chatId?: ModelIDInput | null,
+  content?: ModelStringInput | null,
+  createdAt?: ModelStringInput | null,
+  isRead?: ModelBooleanInput | null,
+  lenderId?: ModelStringInput | null,
+  messageType?: ModelMessageMessageTypeInput | null,
+  not?: ModelMessageConditionInput | null,
+  or?: Array< ModelMessageConditionInput | null > | null,
+  readAt?: ModelStringInput | null,
+  senderEmail?: ModelStringInput | null,
+  senderId?: ModelStringInput | null,
+  senderUsername?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
+};
+
+export type CreateMessageInput = {
+  borrowerId: string,
+  chatId: string,
+  content: string,
+  id?: string | null,
+  isRead?: boolean | null,
+  lenderId: string,
+  messageType?: MessageMessageType | null,
+  readAt?: string | null,
+  senderEmail: string,
+  senderId: string,
+  senderUsername: string,
 };
 
 export type ModelNotificationConditionInput = {
@@ -896,11 +858,7 @@ export type DeleteBookInput = {
   id: string,
 };
 
-export type DeleteChatMessageInput = {
-  id: string,
-};
-
-export type DeleteLoanChatInput = {
+export type DeleteChatInput = {
   id: string,
 };
 
@@ -909,6 +867,10 @@ export type DeleteLoanHandoffInput = {
 };
 
 export type DeleteLoanRequestInput = {
+  id: string,
+};
+
+export type DeleteMessageInput = {
   id: string,
 };
 
@@ -962,36 +924,19 @@ export type UpdateBookInput = {
   wouldRecommend?: boolean | null,
 };
 
-export type UpdateChatMessageInput = {
-  chatId?: string | null,
-  content?: string | null,
-  editedAt?: string | null,
-  id: string,
-  isEdited?: boolean | null,
-  isRead?: boolean | null,
-  isSystemMessage?: boolean | null,
-  messageType?: ChatMessageMessageType | null,
-  metadata?: string | null,
-  readAt?: string | null,
-  senderId?: string | null,
-  senderRole?: ChatMessageSenderRole | null,
-};
-
-export type UpdateLoanChatInput = {
-  activeLoanId?: string | null,
-  bookId?: string | null,
+export type UpdateChatInput = {
+  borrowerEmail?: string | null,
   borrowerId?: string | null,
   borrowerUnreadCount?: number | null,
-  closedAt?: string | null,
-  closedReason?: LoanChatClosedReason | null,
-  handoffId?: string | null,
+  borrowerUsername?: string | null,
   id: string,
-  isActive?: boolean | null,
   lastMessageAt?: string | null,
+  lastMessagePreview?: string | null,
+  lenderEmail?: string | null,
   lenderId?: string | null,
   lenderUnreadCount?: number | null,
+  lenderUsername?: string | null,
   loanRequestId?: string | null,
-  stage?: LoanChatStage | null,
 };
 
 export type UpdateLoanHandoffInput = {
@@ -1001,8 +946,10 @@ export type UpdateLoanHandoffInput = {
   id: string,
   lenderConfirmed?: boolean | null,
   lenderConfirmedAt?: string | null,
+  lenderId?: string | null,
   loanRequestId?: string | null,
   meetingLocation?: string | null,
+  requesterId?: string | null,
   scheduledTime?: string | null,
 };
 
@@ -1019,6 +966,20 @@ export type UpdateLoanRequestInput = {
   requesterId?: string | null,
   respondedAt?: string | null,
   status?: LoanRequestStatus | null,
+};
+
+export type UpdateMessageInput = {
+  borrowerId?: string | null,
+  chatId?: string | null,
+  content?: string | null,
+  id: string,
+  isRead?: boolean | null,
+  lenderId?: string | null,
+  messageType?: MessageMessageType | null,
+  readAt?: string | null,
+  senderEmail?: string | null,
+  senderId?: string | null,
+  senderUsername?: string | null,
 };
 
 export type UpdateNotificationInput = {
@@ -1145,43 +1106,22 @@ export type ModelSubscriptionBookFilterInput = {
   wouldRecommend?: ModelSubscriptionBooleanInput | null,
 };
 
-export type ModelSubscriptionChatMessageFilterInput = {
-  and?: Array< ModelSubscriptionChatMessageFilterInput | null > | null,
-  chatId?: ModelSubscriptionStringInput | null,
-  content?: ModelSubscriptionStringInput | null,
-  createdAt?: ModelSubscriptionStringInput | null,
-  editedAt?: ModelSubscriptionStringInput | null,
-  id?: ModelSubscriptionIDInput | null,
-  isEdited?: ModelSubscriptionBooleanInput | null,
-  isRead?: ModelSubscriptionBooleanInput | null,
-  isSystemMessage?: ModelSubscriptionBooleanInput | null,
-  messageType?: ModelSubscriptionStringInput | null,
-  metadata?: ModelSubscriptionStringInput | null,
-  or?: Array< ModelSubscriptionChatMessageFilterInput | null > | null,
-  readAt?: ModelSubscriptionStringInput | null,
-  senderId?: ModelSubscriptionStringInput | null,
-  senderRole?: ModelSubscriptionStringInput | null,
-  updatedAt?: ModelSubscriptionStringInput | null,
-};
-
-export type ModelSubscriptionLoanChatFilterInput = {
-  activeLoanId?: ModelSubscriptionStringInput | null,
-  and?: Array< ModelSubscriptionLoanChatFilterInput | null > | null,
-  bookId?: ModelSubscriptionStringInput | null,
-  borrowerId?: ModelSubscriptionStringInput | null,
+export type ModelSubscriptionChatFilterInput = {
+  and?: Array< ModelSubscriptionChatFilterInput | null > | null,
+  borrowerEmail?: ModelSubscriptionStringInput | null,
+  borrowerId?: ModelStringInput | null,
   borrowerUnreadCount?: ModelSubscriptionIntInput | null,
-  closedAt?: ModelSubscriptionStringInput | null,
-  closedReason?: ModelSubscriptionStringInput | null,
+  borrowerUsername?: ModelSubscriptionStringInput | null,
   createdAt?: ModelSubscriptionStringInput | null,
-  handoffId?: ModelSubscriptionStringInput | null,
   id?: ModelSubscriptionIDInput | null,
-  isActive?: ModelSubscriptionBooleanInput | null,
   lastMessageAt?: ModelSubscriptionStringInput | null,
-  lenderId?: ModelSubscriptionStringInput | null,
+  lastMessagePreview?: ModelSubscriptionStringInput | null,
+  lenderEmail?: ModelSubscriptionStringInput | null,
+  lenderId?: ModelStringInput | null,
   lenderUnreadCount?: ModelSubscriptionIntInput | null,
-  loanRequestId?: ModelSubscriptionStringInput | null,
-  or?: Array< ModelSubscriptionLoanChatFilterInput | null > | null,
-  stage?: ModelSubscriptionStringInput | null,
+  lenderUsername?: ModelSubscriptionStringInput | null,
+  loanRequestId?: ModelSubscriptionIDInput | null,
+  or?: Array< ModelSubscriptionChatFilterInput | null > | null,
   updatedAt?: ModelSubscriptionStringInput | null,
 };
 
@@ -1194,10 +1134,11 @@ export type ModelSubscriptionLoanHandoffFilterInput = {
   id?: ModelSubscriptionIDInput | null,
   lenderConfirmed?: ModelSubscriptionBooleanInput | null,
   lenderConfirmedAt?: ModelSubscriptionStringInput | null,
+  lenderId?: ModelStringInput | null,
   loanRequestId?: ModelSubscriptionStringInput | null,
   meetingLocation?: ModelSubscriptionStringInput | null,
   or?: Array< ModelSubscriptionLoanHandoffFilterInput | null > | null,
-  owner?: ModelStringInput | null,
+  requesterId?: ModelStringInput | null,
   scheduledTime?: ModelSubscriptionStringInput | null,
   updatedAt?: ModelSubscriptionStringInput | null,
 };
@@ -1210,15 +1151,32 @@ export type ModelSubscriptionLoanRequestFilterInput = {
   createdAt?: ModelSubscriptionStringInput | null,
   dueDate?: ModelSubscriptionStringInput | null,
   id?: ModelSubscriptionIDInput | null,
-  lenderId?: ModelSubscriptionStringInput | null,
+  lenderId?: ModelStringInput | null,
   message?: ModelSubscriptionStringInput | null,
   or?: Array< ModelSubscriptionLoanRequestFilterInput | null > | null,
-  owner?: ModelStringInput | null,
   proposedDuration?: ModelSubscriptionIntInput | null,
   requestedAt?: ModelSubscriptionStringInput | null,
-  requesterId?: ModelSubscriptionStringInput | null,
+  requesterId?: ModelStringInput | null,
   respondedAt?: ModelSubscriptionStringInput | null,
   status?: ModelSubscriptionStringInput | null,
+  updatedAt?: ModelSubscriptionStringInput | null,
+};
+
+export type ModelSubscriptionMessageFilterInput = {
+  and?: Array< ModelSubscriptionMessageFilterInput | null > | null,
+  borrowerId?: ModelStringInput | null,
+  chatId?: ModelSubscriptionIDInput | null,
+  content?: ModelSubscriptionStringInput | null,
+  createdAt?: ModelSubscriptionStringInput | null,
+  id?: ModelSubscriptionIDInput | null,
+  isRead?: ModelSubscriptionBooleanInput | null,
+  lenderId?: ModelStringInput | null,
+  messageType?: ModelSubscriptionStringInput | null,
+  or?: Array< ModelSubscriptionMessageFilterInput | null > | null,
+  readAt?: ModelSubscriptionStringInput | null,
+  senderEmail?: ModelSubscriptionStringInput | null,
+  senderId?: ModelStringInput | null,
+  senderUsername?: ModelSubscriptionStringInput | null,
   updatedAt?: ModelSubscriptionStringInput | null,
 };
 
@@ -1322,52 +1280,47 @@ export type GetBookQuery = {
   } | null,
 };
 
-export type GetChatMessageQueryVariables = {
+export type GetChatQueryVariables = {
   id: string,
 };
 
-export type GetChatMessageQuery = {
-  getChatMessage?:  {
-    __typename: "ChatMessage",
-    chatId: string,
-    content: string,
-    createdAt: string,
-    editedAt?: string | null,
-    id: string,
-    isEdited?: boolean | null,
-    isRead?: boolean | null,
-    isSystemMessage?: boolean | null,
-    messageType?: ChatMessageMessageType | null,
-    metadata?: string | null,
-    readAt?: string | null,
-    senderId: string,
-    senderRole?: ChatMessageSenderRole | null,
-    updatedAt: string,
-  } | null,
-};
-
-export type GetLoanChatQueryVariables = {
-  id: string,
-};
-
-export type GetLoanChatQuery = {
-  getLoanChat?:  {
-    __typename: "LoanChat",
-    activeLoanId?: string | null,
-    bookId: string,
+export type GetChatQuery = {
+  getChat?:  {
+    __typename: "Chat",
+    borrowerEmail: string,
     borrowerId: string,
     borrowerUnreadCount?: number | null,
-    closedAt?: string | null,
-    closedReason?: LoanChatClosedReason | null,
+    borrowerUsername?: string | null,
     createdAt: string,
-    handoffId?: string | null,
     id: string,
-    isActive?: boolean | null,
     lastMessageAt?: string | null,
+    lastMessagePreview?: string | null,
+    lenderEmail: string,
     lenderId: string,
     lenderUnreadCount?: number | null,
+    lenderUsername?: string | null,
+    loanRequest?:  {
+      __typename: "LoanRequest",
+      approvedDuration?: number | null,
+      bookId: string,
+      completedAt?: string | null,
+      createdAt: string,
+      dueDate?: string | null,
+      id: string,
+      lenderId: string,
+      message?: string | null,
+      proposedDuration?: number | null,
+      requestedAt: string,
+      requesterId: string,
+      respondedAt?: string | null,
+      status?: LoanRequestStatus | null,
+      updatedAt: string,
+    } | null,
     loanRequestId: string,
-    stage?: LoanChatStage | null,
+    messages?:  {
+      __typename: "ModelMessageConnection",
+      nextToken?: string | null,
+    } | null,
     updatedAt: string,
   } | null,
 };
@@ -1386,9 +1339,10 @@ export type GetLoanHandoffQuery = {
     id: string,
     lenderConfirmed?: boolean | null,
     lenderConfirmedAt?: string | null,
+    lenderId: string,
     loanRequestId: string,
     meetingLocation?: string | null,
-    owner?: string | null,
+    requesterId: string,
     scheduledTime?: string | null,
     updatedAt: string,
   } | null,
@@ -1403,18 +1357,74 @@ export type GetLoanRequestQuery = {
     __typename: "LoanRequest",
     approvedDuration?: number | null,
     bookId: string,
+    chat?:  {
+      __typename: "Chat",
+      borrowerEmail: string,
+      borrowerId: string,
+      borrowerUnreadCount?: number | null,
+      borrowerUsername?: string | null,
+      createdAt: string,
+      id: string,
+      lastMessageAt?: string | null,
+      lastMessagePreview?: string | null,
+      lenderEmail: string,
+      lenderId: string,
+      lenderUnreadCount?: number | null,
+      lenderUsername?: string | null,
+      loanRequestId: string,
+      updatedAt: string,
+    } | null,
     completedAt?: string | null,
     createdAt: string,
     dueDate?: string | null,
     id: string,
     lenderId: string,
     message?: string | null,
-    owner?: string | null,
     proposedDuration?: number | null,
     requestedAt: string,
     requesterId: string,
     respondedAt?: string | null,
     status?: LoanRequestStatus | null,
+    updatedAt: string,
+  } | null,
+};
+
+export type GetMessageQueryVariables = {
+  id: string,
+};
+
+export type GetMessageQuery = {
+  getMessage?:  {
+    __typename: "Message",
+    borrowerId: string,
+    chat?:  {
+      __typename: "Chat",
+      borrowerEmail: string,
+      borrowerId: string,
+      borrowerUnreadCount?: number | null,
+      borrowerUsername?: string | null,
+      createdAt: string,
+      id: string,
+      lastMessageAt?: string | null,
+      lastMessagePreview?: string | null,
+      lenderEmail: string,
+      lenderId: string,
+      lenderUnreadCount?: number | null,
+      lenderUsername?: string | null,
+      loanRequestId: string,
+      updatedAt: string,
+    } | null,
+    chatId: string,
+    content: string,
+    createdAt: string,
+    id: string,
+    isRead?: boolean | null,
+    lenderId: string,
+    messageType?: MessageMessageType | null,
+    readAt?: string | null,
+    senderEmail: string,
+    senderId: string,
+    senderUsername: string,
     updatedAt: string,
   } | null,
 };
@@ -1565,62 +1575,30 @@ export type ListBooksQuery = {
   } | null,
 };
 
-export type ListChatMessagesQueryVariables = {
-  filter?: ModelChatMessageFilterInput | null,
+export type ListChatsQueryVariables = {
+  filter?: ModelChatFilterInput | null,
   limit?: number | null,
   nextToken?: string | null,
 };
 
-export type ListChatMessagesQuery = {
-  listChatMessages?:  {
-    __typename: "ModelChatMessageConnection",
+export type ListChatsQuery = {
+  listChats?:  {
+    __typename: "ModelChatConnection",
     items:  Array< {
-      __typename: "ChatMessage",
-      chatId: string,
-      content: string,
-      createdAt: string,
-      editedAt?: string | null,
-      id: string,
-      isEdited?: boolean | null,
-      isRead?: boolean | null,
-      isSystemMessage?: boolean | null,
-      messageType?: ChatMessageMessageType | null,
-      metadata?: string | null,
-      readAt?: string | null,
-      senderId: string,
-      senderRole?: ChatMessageSenderRole | null,
-      updatedAt: string,
-    } | null >,
-    nextToken?: string | null,
-  } | null,
-};
-
-export type ListLoanChatsQueryVariables = {
-  filter?: ModelLoanChatFilterInput | null,
-  limit?: number | null,
-  nextToken?: string | null,
-};
-
-export type ListLoanChatsQuery = {
-  listLoanChats?:  {
-    __typename: "ModelLoanChatConnection",
-    items:  Array< {
-      __typename: "LoanChat",
-      activeLoanId?: string | null,
-      bookId: string,
+      __typename: "Chat",
+      borrowerEmail: string,
       borrowerId: string,
       borrowerUnreadCount?: number | null,
-      closedAt?: string | null,
-      closedReason?: LoanChatClosedReason | null,
+      borrowerUsername?: string | null,
       createdAt: string,
-      handoffId?: string | null,
       id: string,
-      isActive?: boolean | null,
       lastMessageAt?: string | null,
+      lastMessagePreview?: string | null,
+      lenderEmail: string,
       lenderId: string,
       lenderUnreadCount?: number | null,
+      lenderUsername?: string | null,
       loanRequestId: string,
-      stage?: LoanChatStage | null,
       updatedAt: string,
     } | null >,
     nextToken?: string | null,
@@ -1645,9 +1623,10 @@ export type ListLoanHandoffsQuery = {
       id: string,
       lenderConfirmed?: boolean | null,
       lenderConfirmedAt?: string | null,
+      lenderId: string,
       loanRequestId: string,
       meetingLocation?: string | null,
-      owner?: string | null,
+      requesterId: string,
       scheduledTime?: string | null,
       updatedAt: string,
     } | null >,
@@ -1674,12 +1653,40 @@ export type ListLoanRequestsQuery = {
       id: string,
       lenderId: string,
       message?: string | null,
-      owner?: string | null,
       proposedDuration?: number | null,
       requestedAt: string,
       requesterId: string,
       respondedAt?: string | null,
       status?: LoanRequestStatus | null,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
+export type ListMessagesQueryVariables = {
+  filter?: ModelMessageFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type ListMessagesQuery = {
+  listMessages?:  {
+    __typename: "ModelMessageConnection",
+    items:  Array< {
+      __typename: "Message",
+      borrowerId: string,
+      chatId: string,
+      content: string,
+      createdAt: string,
+      id: string,
+      isRead?: boolean | null,
+      lenderId: string,
+      messageType?: MessageMessageType | null,
+      readAt?: string | null,
+      senderEmail: string,
+      senderId: string,
+      senderUsername: string,
       updatedAt: string,
     } | null >,
     nextToken?: string | null,
@@ -1794,6 +1801,23 @@ export type SearchAddressesQuery = {
   } | null,
 };
 
+export type ApproveLoanRequestMutationMutationVariables = {
+  approvedDuration: number,
+  loanRequestId: string,
+  userName: string,
+};
+
+export type ApproveLoanRequestMutationMutation = {
+  approveLoanRequestMutation?:  {
+    __typename: "ApproveLoanRequestMutationReturnType",
+    chatId?: string | null,
+    error?: string | null,
+    loanRequestId?: string | null,
+    message: string,
+    success: boolean,
+  } | null,
+};
+
 export type CreateActiveLoanMutationVariables = {
   condition?: ModelActiveLoanConditionInput | null,
   input: CreateActiveLoanInput,
@@ -1854,54 +1878,48 @@ export type CreateBookMutation = {
   } | null,
 };
 
-export type CreateChatMessageMutationVariables = {
-  condition?: ModelChatMessageConditionInput | null,
-  input: CreateChatMessageInput,
+export type CreateChatMutationVariables = {
+  condition?: ModelChatConditionInput | null,
+  input: CreateChatInput,
 };
 
-export type CreateChatMessageMutation = {
-  createChatMessage?:  {
-    __typename: "ChatMessage",
-    chatId: string,
-    content: string,
-    createdAt: string,
-    editedAt?: string | null,
-    id: string,
-    isEdited?: boolean | null,
-    isRead?: boolean | null,
-    isSystemMessage?: boolean | null,
-    messageType?: ChatMessageMessageType | null,
-    metadata?: string | null,
-    readAt?: string | null,
-    senderId: string,
-    senderRole?: ChatMessageSenderRole | null,
-    updatedAt: string,
-  } | null,
-};
-
-export type CreateLoanChatMutationVariables = {
-  condition?: ModelLoanChatConditionInput | null,
-  input: CreateLoanChatInput,
-};
-
-export type CreateLoanChatMutation = {
-  createLoanChat?:  {
-    __typename: "LoanChat",
-    activeLoanId?: string | null,
-    bookId: string,
+export type CreateChatMutation = {
+  createChat?:  {
+    __typename: "Chat",
+    borrowerEmail: string,
     borrowerId: string,
     borrowerUnreadCount?: number | null,
-    closedAt?: string | null,
-    closedReason?: LoanChatClosedReason | null,
+    borrowerUsername?: string | null,
     createdAt: string,
-    handoffId?: string | null,
     id: string,
-    isActive?: boolean | null,
     lastMessageAt?: string | null,
+    lastMessagePreview?: string | null,
+    lenderEmail: string,
     lenderId: string,
     lenderUnreadCount?: number | null,
+    lenderUsername?: string | null,
+    loanRequest?:  {
+      __typename: "LoanRequest",
+      approvedDuration?: number | null,
+      bookId: string,
+      completedAt?: string | null,
+      createdAt: string,
+      dueDate?: string | null,
+      id: string,
+      lenderId: string,
+      message?: string | null,
+      proposedDuration?: number | null,
+      requestedAt: string,
+      requesterId: string,
+      respondedAt?: string | null,
+      status?: LoanRequestStatus | null,
+      updatedAt: string,
+    } | null,
     loanRequestId: string,
-    stage?: LoanChatStage | null,
+    messages?:  {
+      __typename: "ModelMessageConnection",
+      nextToken?: string | null,
+    } | null,
     updatedAt: string,
   } | null,
 };
@@ -1921,9 +1939,10 @@ export type CreateLoanHandoffMutation = {
     id: string,
     lenderConfirmed?: boolean | null,
     lenderConfirmedAt?: string | null,
+    lenderId: string,
     loanRequestId: string,
     meetingLocation?: string | null,
-    owner?: string | null,
+    requesterId: string,
     scheduledTime?: string | null,
     updatedAt: string,
   } | null,
@@ -1939,18 +1958,75 @@ export type CreateLoanRequestMutation = {
     __typename: "LoanRequest",
     approvedDuration?: number | null,
     bookId: string,
+    chat?:  {
+      __typename: "Chat",
+      borrowerEmail: string,
+      borrowerId: string,
+      borrowerUnreadCount?: number | null,
+      borrowerUsername?: string | null,
+      createdAt: string,
+      id: string,
+      lastMessageAt?: string | null,
+      lastMessagePreview?: string | null,
+      lenderEmail: string,
+      lenderId: string,
+      lenderUnreadCount?: number | null,
+      lenderUsername?: string | null,
+      loanRequestId: string,
+      updatedAt: string,
+    } | null,
     completedAt?: string | null,
     createdAt: string,
     dueDate?: string | null,
     id: string,
     lenderId: string,
     message?: string | null,
-    owner?: string | null,
     proposedDuration?: number | null,
     requestedAt: string,
     requesterId: string,
     respondedAt?: string | null,
     status?: LoanRequestStatus | null,
+    updatedAt: string,
+  } | null,
+};
+
+export type CreateMessageMutationVariables = {
+  condition?: ModelMessageConditionInput | null,
+  input: CreateMessageInput,
+};
+
+export type CreateMessageMutation = {
+  createMessage?:  {
+    __typename: "Message",
+    borrowerId: string,
+    chat?:  {
+      __typename: "Chat",
+      borrowerEmail: string,
+      borrowerId: string,
+      borrowerUnreadCount?: number | null,
+      borrowerUsername?: string | null,
+      createdAt: string,
+      id: string,
+      lastMessageAt?: string | null,
+      lastMessagePreview?: string | null,
+      lenderEmail: string,
+      lenderId: string,
+      lenderUnreadCount?: number | null,
+      lenderUsername?: string | null,
+      loanRequestId: string,
+      updatedAt: string,
+    } | null,
+    chatId: string,
+    content: string,
+    createdAt: string,
+    id: string,
+    isRead?: boolean | null,
+    lenderId: string,
+    messageType?: MessageMessageType | null,
+    readAt?: string | null,
+    senderEmail: string,
+    senderId: string,
+    senderUsername: string,
     updatedAt: string,
   } | null,
 };
@@ -2079,54 +2155,48 @@ export type DeleteBookMutation = {
   } | null,
 };
 
-export type DeleteChatMessageMutationVariables = {
-  condition?: ModelChatMessageConditionInput | null,
-  input: DeleteChatMessageInput,
+export type DeleteChatMutationVariables = {
+  condition?: ModelChatConditionInput | null,
+  input: DeleteChatInput,
 };
 
-export type DeleteChatMessageMutation = {
-  deleteChatMessage?:  {
-    __typename: "ChatMessage",
-    chatId: string,
-    content: string,
-    createdAt: string,
-    editedAt?: string | null,
-    id: string,
-    isEdited?: boolean | null,
-    isRead?: boolean | null,
-    isSystemMessage?: boolean | null,
-    messageType?: ChatMessageMessageType | null,
-    metadata?: string | null,
-    readAt?: string | null,
-    senderId: string,
-    senderRole?: ChatMessageSenderRole | null,
-    updatedAt: string,
-  } | null,
-};
-
-export type DeleteLoanChatMutationVariables = {
-  condition?: ModelLoanChatConditionInput | null,
-  input: DeleteLoanChatInput,
-};
-
-export type DeleteLoanChatMutation = {
-  deleteLoanChat?:  {
-    __typename: "LoanChat",
-    activeLoanId?: string | null,
-    bookId: string,
+export type DeleteChatMutation = {
+  deleteChat?:  {
+    __typename: "Chat",
+    borrowerEmail: string,
     borrowerId: string,
     borrowerUnreadCount?: number | null,
-    closedAt?: string | null,
-    closedReason?: LoanChatClosedReason | null,
+    borrowerUsername?: string | null,
     createdAt: string,
-    handoffId?: string | null,
     id: string,
-    isActive?: boolean | null,
     lastMessageAt?: string | null,
+    lastMessagePreview?: string | null,
+    lenderEmail: string,
     lenderId: string,
     lenderUnreadCount?: number | null,
+    lenderUsername?: string | null,
+    loanRequest?:  {
+      __typename: "LoanRequest",
+      approvedDuration?: number | null,
+      bookId: string,
+      completedAt?: string | null,
+      createdAt: string,
+      dueDate?: string | null,
+      id: string,
+      lenderId: string,
+      message?: string | null,
+      proposedDuration?: number | null,
+      requestedAt: string,
+      requesterId: string,
+      respondedAt?: string | null,
+      status?: LoanRequestStatus | null,
+      updatedAt: string,
+    } | null,
     loanRequestId: string,
-    stage?: LoanChatStage | null,
+    messages?:  {
+      __typename: "ModelMessageConnection",
+      nextToken?: string | null,
+    } | null,
     updatedAt: string,
   } | null,
 };
@@ -2146,9 +2216,10 @@ export type DeleteLoanHandoffMutation = {
     id: string,
     lenderConfirmed?: boolean | null,
     lenderConfirmedAt?: string | null,
+    lenderId: string,
     loanRequestId: string,
     meetingLocation?: string | null,
-    owner?: string | null,
+    requesterId: string,
     scheduledTime?: string | null,
     updatedAt: string,
   } | null,
@@ -2164,18 +2235,75 @@ export type DeleteLoanRequestMutation = {
     __typename: "LoanRequest",
     approvedDuration?: number | null,
     bookId: string,
+    chat?:  {
+      __typename: "Chat",
+      borrowerEmail: string,
+      borrowerId: string,
+      borrowerUnreadCount?: number | null,
+      borrowerUsername?: string | null,
+      createdAt: string,
+      id: string,
+      lastMessageAt?: string | null,
+      lastMessagePreview?: string | null,
+      lenderEmail: string,
+      lenderId: string,
+      lenderUnreadCount?: number | null,
+      lenderUsername?: string | null,
+      loanRequestId: string,
+      updatedAt: string,
+    } | null,
     completedAt?: string | null,
     createdAt: string,
     dueDate?: string | null,
     id: string,
     lenderId: string,
     message?: string | null,
-    owner?: string | null,
     proposedDuration?: number | null,
     requestedAt: string,
     requesterId: string,
     respondedAt?: string | null,
     status?: LoanRequestStatus | null,
+    updatedAt: string,
+  } | null,
+};
+
+export type DeleteMessageMutationVariables = {
+  condition?: ModelMessageConditionInput | null,
+  input: DeleteMessageInput,
+};
+
+export type DeleteMessageMutation = {
+  deleteMessage?:  {
+    __typename: "Message",
+    borrowerId: string,
+    chat?:  {
+      __typename: "Chat",
+      borrowerEmail: string,
+      borrowerId: string,
+      borrowerUnreadCount?: number | null,
+      borrowerUsername?: string | null,
+      createdAt: string,
+      id: string,
+      lastMessageAt?: string | null,
+      lastMessagePreview?: string | null,
+      lenderEmail: string,
+      lenderId: string,
+      lenderUnreadCount?: number | null,
+      lenderUsername?: string | null,
+      loanRequestId: string,
+      updatedAt: string,
+    } | null,
+    chatId: string,
+    content: string,
+    createdAt: string,
+    id: string,
+    isRead?: boolean | null,
+    lenderId: string,
+    messageType?: MessageMessageType | null,
+    readAt?: string | null,
+    senderEmail: string,
+    senderId: string,
+    senderUsername: string,
     updatedAt: string,
   } | null,
 };
@@ -2304,54 +2432,48 @@ export type UpdateBookMutation = {
   } | null,
 };
 
-export type UpdateChatMessageMutationVariables = {
-  condition?: ModelChatMessageConditionInput | null,
-  input: UpdateChatMessageInput,
+export type UpdateChatMutationVariables = {
+  condition?: ModelChatConditionInput | null,
+  input: UpdateChatInput,
 };
 
-export type UpdateChatMessageMutation = {
-  updateChatMessage?:  {
-    __typename: "ChatMessage",
-    chatId: string,
-    content: string,
-    createdAt: string,
-    editedAt?: string | null,
-    id: string,
-    isEdited?: boolean | null,
-    isRead?: boolean | null,
-    isSystemMessage?: boolean | null,
-    messageType?: ChatMessageMessageType | null,
-    metadata?: string | null,
-    readAt?: string | null,
-    senderId: string,
-    senderRole?: ChatMessageSenderRole | null,
-    updatedAt: string,
-  } | null,
-};
-
-export type UpdateLoanChatMutationVariables = {
-  condition?: ModelLoanChatConditionInput | null,
-  input: UpdateLoanChatInput,
-};
-
-export type UpdateLoanChatMutation = {
-  updateLoanChat?:  {
-    __typename: "LoanChat",
-    activeLoanId?: string | null,
-    bookId: string,
+export type UpdateChatMutation = {
+  updateChat?:  {
+    __typename: "Chat",
+    borrowerEmail: string,
     borrowerId: string,
     borrowerUnreadCount?: number | null,
-    closedAt?: string | null,
-    closedReason?: LoanChatClosedReason | null,
+    borrowerUsername?: string | null,
     createdAt: string,
-    handoffId?: string | null,
     id: string,
-    isActive?: boolean | null,
     lastMessageAt?: string | null,
+    lastMessagePreview?: string | null,
+    lenderEmail: string,
     lenderId: string,
     lenderUnreadCount?: number | null,
+    lenderUsername?: string | null,
+    loanRequest?:  {
+      __typename: "LoanRequest",
+      approvedDuration?: number | null,
+      bookId: string,
+      completedAt?: string | null,
+      createdAt: string,
+      dueDate?: string | null,
+      id: string,
+      lenderId: string,
+      message?: string | null,
+      proposedDuration?: number | null,
+      requestedAt: string,
+      requesterId: string,
+      respondedAt?: string | null,
+      status?: LoanRequestStatus | null,
+      updatedAt: string,
+    } | null,
     loanRequestId: string,
-    stage?: LoanChatStage | null,
+    messages?:  {
+      __typename: "ModelMessageConnection",
+      nextToken?: string | null,
+    } | null,
     updatedAt: string,
   } | null,
 };
@@ -2371,9 +2493,10 @@ export type UpdateLoanHandoffMutation = {
     id: string,
     lenderConfirmed?: boolean | null,
     lenderConfirmedAt?: string | null,
+    lenderId: string,
     loanRequestId: string,
     meetingLocation?: string | null,
-    owner?: string | null,
+    requesterId: string,
     scheduledTime?: string | null,
     updatedAt: string,
   } | null,
@@ -2389,18 +2512,75 @@ export type UpdateLoanRequestMutation = {
     __typename: "LoanRequest",
     approvedDuration?: number | null,
     bookId: string,
+    chat?:  {
+      __typename: "Chat",
+      borrowerEmail: string,
+      borrowerId: string,
+      borrowerUnreadCount?: number | null,
+      borrowerUsername?: string | null,
+      createdAt: string,
+      id: string,
+      lastMessageAt?: string | null,
+      lastMessagePreview?: string | null,
+      lenderEmail: string,
+      lenderId: string,
+      lenderUnreadCount?: number | null,
+      lenderUsername?: string | null,
+      loanRequestId: string,
+      updatedAt: string,
+    } | null,
     completedAt?: string | null,
     createdAt: string,
     dueDate?: string | null,
     id: string,
     lenderId: string,
     message?: string | null,
-    owner?: string | null,
     proposedDuration?: number | null,
     requestedAt: string,
     requesterId: string,
     respondedAt?: string | null,
     status?: LoanRequestStatus | null,
+    updatedAt: string,
+  } | null,
+};
+
+export type UpdateMessageMutationVariables = {
+  condition?: ModelMessageConditionInput | null,
+  input: UpdateMessageInput,
+};
+
+export type UpdateMessageMutation = {
+  updateMessage?:  {
+    __typename: "Message",
+    borrowerId: string,
+    chat?:  {
+      __typename: "Chat",
+      borrowerEmail: string,
+      borrowerId: string,
+      borrowerUnreadCount?: number | null,
+      borrowerUsername?: string | null,
+      createdAt: string,
+      id: string,
+      lastMessageAt?: string | null,
+      lastMessagePreview?: string | null,
+      lenderEmail: string,
+      lenderId: string,
+      lenderUnreadCount?: number | null,
+      lenderUsername?: string | null,
+      loanRequestId: string,
+      updatedAt: string,
+    } | null,
+    chatId: string,
+    content: string,
+    createdAt: string,
+    id: string,
+    isRead?: boolean | null,
+    lenderId: string,
+    messageType?: MessageMessageType | null,
+    readAt?: string | null,
+    senderEmail: string,
+    senderId: string,
+    senderUsername: string,
     updatedAt: string,
   } | null,
 };
@@ -2529,59 +2709,57 @@ export type OnCreateBookSubscription = {
   } | null,
 };
 
-export type OnCreateChatMessageSubscriptionVariables = {
-  filter?: ModelSubscriptionChatMessageFilterInput | null,
+export type OnCreateChatSubscriptionVariables = {
+  borrowerId?: string | null,
+  filter?: ModelSubscriptionChatFilterInput | null,
+  lenderId?: string | null,
 };
 
-export type OnCreateChatMessageSubscription = {
-  onCreateChatMessage?:  {
-    __typename: "ChatMessage",
-    chatId: string,
-    content: string,
-    createdAt: string,
-    editedAt?: string | null,
-    id: string,
-    isEdited?: boolean | null,
-    isRead?: boolean | null,
-    isSystemMessage?: boolean | null,
-    messageType?: ChatMessageMessageType | null,
-    metadata?: string | null,
-    readAt?: string | null,
-    senderId: string,
-    senderRole?: ChatMessageSenderRole | null,
-    updatedAt: string,
-  } | null,
-};
-
-export type OnCreateLoanChatSubscriptionVariables = {
-  filter?: ModelSubscriptionLoanChatFilterInput | null,
-};
-
-export type OnCreateLoanChatSubscription = {
-  onCreateLoanChat?:  {
-    __typename: "LoanChat",
-    activeLoanId?: string | null,
-    bookId: string,
+export type OnCreateChatSubscription = {
+  onCreateChat?:  {
+    __typename: "Chat",
+    borrowerEmail: string,
     borrowerId: string,
     borrowerUnreadCount?: number | null,
-    closedAt?: string | null,
-    closedReason?: LoanChatClosedReason | null,
+    borrowerUsername?: string | null,
     createdAt: string,
-    handoffId?: string | null,
     id: string,
-    isActive?: boolean | null,
     lastMessageAt?: string | null,
+    lastMessagePreview?: string | null,
+    lenderEmail: string,
     lenderId: string,
     lenderUnreadCount?: number | null,
+    lenderUsername?: string | null,
+    loanRequest?:  {
+      __typename: "LoanRequest",
+      approvedDuration?: number | null,
+      bookId: string,
+      completedAt?: string | null,
+      createdAt: string,
+      dueDate?: string | null,
+      id: string,
+      lenderId: string,
+      message?: string | null,
+      proposedDuration?: number | null,
+      requestedAt: string,
+      requesterId: string,
+      respondedAt?: string | null,
+      status?: LoanRequestStatus | null,
+      updatedAt: string,
+    } | null,
     loanRequestId: string,
-    stage?: LoanChatStage | null,
+    messages?:  {
+      __typename: "ModelMessageConnection",
+      nextToken?: string | null,
+    } | null,
     updatedAt: string,
   } | null,
 };
 
 export type OnCreateLoanHandoffSubscriptionVariables = {
   filter?: ModelSubscriptionLoanHandoffFilterInput | null,
-  owner?: string | null,
+  lenderId?: string | null,
+  requesterId?: string | null,
 };
 
 export type OnCreateLoanHandoffSubscription = {
@@ -2594,9 +2772,10 @@ export type OnCreateLoanHandoffSubscription = {
     id: string,
     lenderConfirmed?: boolean | null,
     lenderConfirmedAt?: string | null,
+    lenderId: string,
     loanRequestId: string,
     meetingLocation?: string | null,
-    owner?: string | null,
+    requesterId: string,
     scheduledTime?: string | null,
     updatedAt: string,
   } | null,
@@ -2604,7 +2783,8 @@ export type OnCreateLoanHandoffSubscription = {
 
 export type OnCreateLoanRequestSubscriptionVariables = {
   filter?: ModelSubscriptionLoanRequestFilterInput | null,
-  owner?: string | null,
+  lenderId?: string | null,
+  requesterId?: string | null,
 };
 
 export type OnCreateLoanRequestSubscription = {
@@ -2612,18 +2792,76 @@ export type OnCreateLoanRequestSubscription = {
     __typename: "LoanRequest",
     approvedDuration?: number | null,
     bookId: string,
+    chat?:  {
+      __typename: "Chat",
+      borrowerEmail: string,
+      borrowerId: string,
+      borrowerUnreadCount?: number | null,
+      borrowerUsername?: string | null,
+      createdAt: string,
+      id: string,
+      lastMessageAt?: string | null,
+      lastMessagePreview?: string | null,
+      lenderEmail: string,
+      lenderId: string,
+      lenderUnreadCount?: number | null,
+      lenderUsername?: string | null,
+      loanRequestId: string,
+      updatedAt: string,
+    } | null,
     completedAt?: string | null,
     createdAt: string,
     dueDate?: string | null,
     id: string,
     lenderId: string,
     message?: string | null,
-    owner?: string | null,
     proposedDuration?: number | null,
     requestedAt: string,
     requesterId: string,
     respondedAt?: string | null,
     status?: LoanRequestStatus | null,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnCreateMessageSubscriptionVariables = {
+  borrowerId?: string | null,
+  filter?: ModelSubscriptionMessageFilterInput | null,
+  lenderId?: string | null,
+};
+
+export type OnCreateMessageSubscription = {
+  onCreateMessage?:  {
+    __typename: "Message",
+    borrowerId: string,
+    chat?:  {
+      __typename: "Chat",
+      borrowerEmail: string,
+      borrowerId: string,
+      borrowerUnreadCount?: number | null,
+      borrowerUsername?: string | null,
+      createdAt: string,
+      id: string,
+      lastMessageAt?: string | null,
+      lastMessagePreview?: string | null,
+      lenderEmail: string,
+      lenderId: string,
+      lenderUnreadCount?: number | null,
+      lenderUsername?: string | null,
+      loanRequestId: string,
+      updatedAt: string,
+    } | null,
+    chatId: string,
+    content: string,
+    createdAt: string,
+    id: string,
+    isRead?: boolean | null,
+    lenderId: string,
+    messageType?: MessageMessageType | null,
+    readAt?: string | null,
+    senderEmail: string,
+    senderId: string,
+    senderUsername: string,
     updatedAt: string,
   } | null,
 };
@@ -2752,59 +2990,57 @@ export type OnDeleteBookSubscription = {
   } | null,
 };
 
-export type OnDeleteChatMessageSubscriptionVariables = {
-  filter?: ModelSubscriptionChatMessageFilterInput | null,
+export type OnDeleteChatSubscriptionVariables = {
+  borrowerId?: string | null,
+  filter?: ModelSubscriptionChatFilterInput | null,
+  lenderId?: string | null,
 };
 
-export type OnDeleteChatMessageSubscription = {
-  onDeleteChatMessage?:  {
-    __typename: "ChatMessage",
-    chatId: string,
-    content: string,
-    createdAt: string,
-    editedAt?: string | null,
-    id: string,
-    isEdited?: boolean | null,
-    isRead?: boolean | null,
-    isSystemMessage?: boolean | null,
-    messageType?: ChatMessageMessageType | null,
-    metadata?: string | null,
-    readAt?: string | null,
-    senderId: string,
-    senderRole?: ChatMessageSenderRole | null,
-    updatedAt: string,
-  } | null,
-};
-
-export type OnDeleteLoanChatSubscriptionVariables = {
-  filter?: ModelSubscriptionLoanChatFilterInput | null,
-};
-
-export type OnDeleteLoanChatSubscription = {
-  onDeleteLoanChat?:  {
-    __typename: "LoanChat",
-    activeLoanId?: string | null,
-    bookId: string,
+export type OnDeleteChatSubscription = {
+  onDeleteChat?:  {
+    __typename: "Chat",
+    borrowerEmail: string,
     borrowerId: string,
     borrowerUnreadCount?: number | null,
-    closedAt?: string | null,
-    closedReason?: LoanChatClosedReason | null,
+    borrowerUsername?: string | null,
     createdAt: string,
-    handoffId?: string | null,
     id: string,
-    isActive?: boolean | null,
     lastMessageAt?: string | null,
+    lastMessagePreview?: string | null,
+    lenderEmail: string,
     lenderId: string,
     lenderUnreadCount?: number | null,
+    lenderUsername?: string | null,
+    loanRequest?:  {
+      __typename: "LoanRequest",
+      approvedDuration?: number | null,
+      bookId: string,
+      completedAt?: string | null,
+      createdAt: string,
+      dueDate?: string | null,
+      id: string,
+      lenderId: string,
+      message?: string | null,
+      proposedDuration?: number | null,
+      requestedAt: string,
+      requesterId: string,
+      respondedAt?: string | null,
+      status?: LoanRequestStatus | null,
+      updatedAt: string,
+    } | null,
     loanRequestId: string,
-    stage?: LoanChatStage | null,
+    messages?:  {
+      __typename: "ModelMessageConnection",
+      nextToken?: string | null,
+    } | null,
     updatedAt: string,
   } | null,
 };
 
 export type OnDeleteLoanHandoffSubscriptionVariables = {
   filter?: ModelSubscriptionLoanHandoffFilterInput | null,
-  owner?: string | null,
+  lenderId?: string | null,
+  requesterId?: string | null,
 };
 
 export type OnDeleteLoanHandoffSubscription = {
@@ -2817,9 +3053,10 @@ export type OnDeleteLoanHandoffSubscription = {
     id: string,
     lenderConfirmed?: boolean | null,
     lenderConfirmedAt?: string | null,
+    lenderId: string,
     loanRequestId: string,
     meetingLocation?: string | null,
-    owner?: string | null,
+    requesterId: string,
     scheduledTime?: string | null,
     updatedAt: string,
   } | null,
@@ -2827,7 +3064,8 @@ export type OnDeleteLoanHandoffSubscription = {
 
 export type OnDeleteLoanRequestSubscriptionVariables = {
   filter?: ModelSubscriptionLoanRequestFilterInput | null,
-  owner?: string | null,
+  lenderId?: string | null,
+  requesterId?: string | null,
 };
 
 export type OnDeleteLoanRequestSubscription = {
@@ -2835,18 +3073,76 @@ export type OnDeleteLoanRequestSubscription = {
     __typename: "LoanRequest",
     approvedDuration?: number | null,
     bookId: string,
+    chat?:  {
+      __typename: "Chat",
+      borrowerEmail: string,
+      borrowerId: string,
+      borrowerUnreadCount?: number | null,
+      borrowerUsername?: string | null,
+      createdAt: string,
+      id: string,
+      lastMessageAt?: string | null,
+      lastMessagePreview?: string | null,
+      lenderEmail: string,
+      lenderId: string,
+      lenderUnreadCount?: number | null,
+      lenderUsername?: string | null,
+      loanRequestId: string,
+      updatedAt: string,
+    } | null,
     completedAt?: string | null,
     createdAt: string,
     dueDate?: string | null,
     id: string,
     lenderId: string,
     message?: string | null,
-    owner?: string | null,
     proposedDuration?: number | null,
     requestedAt: string,
     requesterId: string,
     respondedAt?: string | null,
     status?: LoanRequestStatus | null,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnDeleteMessageSubscriptionVariables = {
+  borrowerId?: string | null,
+  filter?: ModelSubscriptionMessageFilterInput | null,
+  lenderId?: string | null,
+};
+
+export type OnDeleteMessageSubscription = {
+  onDeleteMessage?:  {
+    __typename: "Message",
+    borrowerId: string,
+    chat?:  {
+      __typename: "Chat",
+      borrowerEmail: string,
+      borrowerId: string,
+      borrowerUnreadCount?: number | null,
+      borrowerUsername?: string | null,
+      createdAt: string,
+      id: string,
+      lastMessageAt?: string | null,
+      lastMessagePreview?: string | null,
+      lenderEmail: string,
+      lenderId: string,
+      lenderUnreadCount?: number | null,
+      lenderUsername?: string | null,
+      loanRequestId: string,
+      updatedAt: string,
+    } | null,
+    chatId: string,
+    content: string,
+    createdAt: string,
+    id: string,
+    isRead?: boolean | null,
+    lenderId: string,
+    messageType?: MessageMessageType | null,
+    readAt?: string | null,
+    senderEmail: string,
+    senderId: string,
+    senderUsername: string,
     updatedAt: string,
   } | null,
 };
@@ -2975,59 +3271,57 @@ export type OnUpdateBookSubscription = {
   } | null,
 };
 
-export type OnUpdateChatMessageSubscriptionVariables = {
-  filter?: ModelSubscriptionChatMessageFilterInput | null,
+export type OnUpdateChatSubscriptionVariables = {
+  borrowerId?: string | null,
+  filter?: ModelSubscriptionChatFilterInput | null,
+  lenderId?: string | null,
 };
 
-export type OnUpdateChatMessageSubscription = {
-  onUpdateChatMessage?:  {
-    __typename: "ChatMessage",
-    chatId: string,
-    content: string,
-    createdAt: string,
-    editedAt?: string | null,
-    id: string,
-    isEdited?: boolean | null,
-    isRead?: boolean | null,
-    isSystemMessage?: boolean | null,
-    messageType?: ChatMessageMessageType | null,
-    metadata?: string | null,
-    readAt?: string | null,
-    senderId: string,
-    senderRole?: ChatMessageSenderRole | null,
-    updatedAt: string,
-  } | null,
-};
-
-export type OnUpdateLoanChatSubscriptionVariables = {
-  filter?: ModelSubscriptionLoanChatFilterInput | null,
-};
-
-export type OnUpdateLoanChatSubscription = {
-  onUpdateLoanChat?:  {
-    __typename: "LoanChat",
-    activeLoanId?: string | null,
-    bookId: string,
+export type OnUpdateChatSubscription = {
+  onUpdateChat?:  {
+    __typename: "Chat",
+    borrowerEmail: string,
     borrowerId: string,
     borrowerUnreadCount?: number | null,
-    closedAt?: string | null,
-    closedReason?: LoanChatClosedReason | null,
+    borrowerUsername?: string | null,
     createdAt: string,
-    handoffId?: string | null,
     id: string,
-    isActive?: boolean | null,
     lastMessageAt?: string | null,
+    lastMessagePreview?: string | null,
+    lenderEmail: string,
     lenderId: string,
     lenderUnreadCount?: number | null,
+    lenderUsername?: string | null,
+    loanRequest?:  {
+      __typename: "LoanRequest",
+      approvedDuration?: number | null,
+      bookId: string,
+      completedAt?: string | null,
+      createdAt: string,
+      dueDate?: string | null,
+      id: string,
+      lenderId: string,
+      message?: string | null,
+      proposedDuration?: number | null,
+      requestedAt: string,
+      requesterId: string,
+      respondedAt?: string | null,
+      status?: LoanRequestStatus | null,
+      updatedAt: string,
+    } | null,
     loanRequestId: string,
-    stage?: LoanChatStage | null,
+    messages?:  {
+      __typename: "ModelMessageConnection",
+      nextToken?: string | null,
+    } | null,
     updatedAt: string,
   } | null,
 };
 
 export type OnUpdateLoanHandoffSubscriptionVariables = {
   filter?: ModelSubscriptionLoanHandoffFilterInput | null,
-  owner?: string | null,
+  lenderId?: string | null,
+  requesterId?: string | null,
 };
 
 export type OnUpdateLoanHandoffSubscription = {
@@ -3040,9 +3334,10 @@ export type OnUpdateLoanHandoffSubscription = {
     id: string,
     lenderConfirmed?: boolean | null,
     lenderConfirmedAt?: string | null,
+    lenderId: string,
     loanRequestId: string,
     meetingLocation?: string | null,
-    owner?: string | null,
+    requesterId: string,
     scheduledTime?: string | null,
     updatedAt: string,
   } | null,
@@ -3050,7 +3345,8 @@ export type OnUpdateLoanHandoffSubscription = {
 
 export type OnUpdateLoanRequestSubscriptionVariables = {
   filter?: ModelSubscriptionLoanRequestFilterInput | null,
-  owner?: string | null,
+  lenderId?: string | null,
+  requesterId?: string | null,
 };
 
 export type OnUpdateLoanRequestSubscription = {
@@ -3058,18 +3354,76 @@ export type OnUpdateLoanRequestSubscription = {
     __typename: "LoanRequest",
     approvedDuration?: number | null,
     bookId: string,
+    chat?:  {
+      __typename: "Chat",
+      borrowerEmail: string,
+      borrowerId: string,
+      borrowerUnreadCount?: number | null,
+      borrowerUsername?: string | null,
+      createdAt: string,
+      id: string,
+      lastMessageAt?: string | null,
+      lastMessagePreview?: string | null,
+      lenderEmail: string,
+      lenderId: string,
+      lenderUnreadCount?: number | null,
+      lenderUsername?: string | null,
+      loanRequestId: string,
+      updatedAt: string,
+    } | null,
     completedAt?: string | null,
     createdAt: string,
     dueDate?: string | null,
     id: string,
     lenderId: string,
     message?: string | null,
-    owner?: string | null,
     proposedDuration?: number | null,
     requestedAt: string,
     requesterId: string,
     respondedAt?: string | null,
     status?: LoanRequestStatus | null,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnUpdateMessageSubscriptionVariables = {
+  borrowerId?: string | null,
+  filter?: ModelSubscriptionMessageFilterInput | null,
+  lenderId?: string | null,
+};
+
+export type OnUpdateMessageSubscription = {
+  onUpdateMessage?:  {
+    __typename: "Message",
+    borrowerId: string,
+    chat?:  {
+      __typename: "Chat",
+      borrowerEmail: string,
+      borrowerId: string,
+      borrowerUnreadCount?: number | null,
+      borrowerUsername?: string | null,
+      createdAt: string,
+      id: string,
+      lastMessageAt?: string | null,
+      lastMessagePreview?: string | null,
+      lenderEmail: string,
+      lenderId: string,
+      lenderUnreadCount?: number | null,
+      lenderUsername?: string | null,
+      loanRequestId: string,
+      updatedAt: string,
+    } | null,
+    chatId: string,
+    content: string,
+    createdAt: string,
+    id: string,
+    isRead?: boolean | null,
+    lenderId: string,
+    messageType?: MessageMessageType | null,
+    readAt?: string | null,
+    senderEmail: string,
+    senderId: string,
+    senderUsername: string,
     updatedAt: string,
   } | null,
 };

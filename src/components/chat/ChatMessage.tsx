@@ -1,18 +1,11 @@
 import MessageBubble from './MessageBubble';
 import { cn } from '@/lib/utils';
+import type { Schema } from '@/amplify/data/resource';
 
-interface Message {
-  id: string;
-  content: string;
-  senderId: string;
-  senderUsername: string;
-  messageType: 'text' | 'system';
-  createdAt: string;
-  isRead: boolean;
-}
+type MessageModel = Schema['Message']['type'];
 
 interface ChatMessageProps {
-  message: Message;
+  message: MessageModel;
   isOwn: boolean;
 }
 
@@ -50,8 +43,8 @@ function ChatMessage({ message, isOwn }: ChatMessageProps) {
         <MessageBubble
           content={message.content}
           isOwn={isOwn}
-          timestamp={new Date(message.createdAt)}
-          isRead={message.isRead}
+          timestamp={new Date(message.createdAt || new Date().toISOString())}
+          isRead={message.isRead || false}
         />
       </div>
       

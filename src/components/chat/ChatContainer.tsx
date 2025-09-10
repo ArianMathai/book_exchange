@@ -3,19 +3,12 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
+import type { Schema } from '@/amplify/data/resource';
 
-interface Message {
-  id: string;
-  content: string;
-  senderId: string;
-  senderUsername: string;
-  messageType: 'text' | 'system';
-  createdAt: string;
-  isRead: boolean;
-}
+type MessageModel = Schema['Message']['type'];
 
 interface ChatContainerProps {
-  messages: Message[];
+  messages: MessageModel[];
   currentUserId: string;
   onSendMessage: (content: string) => Promise<void>;
   isLoading?: boolean;
@@ -32,9 +25,15 @@ function ChatContainer({
   placeholder = "Type a message..."
 }: ChatContainerProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   };
 
   useEffect(() => {
@@ -42,9 +41,9 @@ function ChatContainer({
   }, [messages]);
 
   return (
-    <Card className={cn("flex flex-col h-full", className)}>
+    <Card className={cn("flex flex-col h-full py-0 gap-0", className)}>
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             <p>No messages yet. Start the conversation!</p>
@@ -62,7 +61,7 @@ function ChatContainer({
       </div>
 
       {/* Input area */}
-      <div className="border-t p-4">
+      <div className="border-t p-2">
         <ChatInput
           onSendMessage={onSendMessage}
           disabled={isLoading}
