@@ -35,15 +35,20 @@ const LoanRequestDetail: React.FC = () => {
             const result = await client.models.LoanRequest.get({ id });
             if (!result.data) throw new Error('Loan request not found');
             
-            // Mark related notification as read
-            const notifications = await client.models.Notification.list({
-                filter: { loanRequestId: { eq: id } }
-            });
-            
-            if (notifications.data && notifications.data.length > 0) {
-                const notification = notifications.data[0];
-                if (!notification.isRead) {
-                    await markRead(notification.id);
+            // Mark related notification as read (only for current user)
+            if (currentUserId) {
+                const notifications = await client.models.Notification.list({
+                    filter: {
+                        loanRequestId: { eq: id },
+                        userId: { eq: currentUserId }
+                    }
+                });
+                
+                if (notifications.data && notifications.data.length > 0) {
+                    const notification = notifications.data[0];
+                    if (!notification.isRead) {
+                        await markRead(notification.id);
+                    }
                 }
             }
             
