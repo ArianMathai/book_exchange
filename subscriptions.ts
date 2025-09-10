@@ -74,6 +74,7 @@ export const onCreateBook = /* GraphQL */ `subscription OnCreateBook(
     isbn
     loanedOut
     loanedTo
+    loanedToUsername
     originalBookId
     originalOwnerEmail
     originalOwnerId
@@ -83,6 +84,7 @@ export const onCreateBook = /* GraphQL */ `subscription OnCreateBook(
     returnedAt
     title
     updatedAt
+    userName
     wouldRecommend
     __typename
   }
@@ -412,6 +414,7 @@ export const onDeleteBook = /* GraphQL */ `subscription OnDeleteBook(
     isbn
     loanedOut
     loanedTo
+    loanedToUsername
     originalBookId
     originalOwnerEmail
     originalOwnerId
@@ -421,6 +424,7 @@ export const onDeleteBook = /* GraphQL */ `subscription OnDeleteBook(
     returnedAt
     title
     updatedAt
+    userName
     wouldRecommend
     __typename
   }
@@ -750,6 +754,7 @@ export const onUpdateBook = /* GraphQL */ `subscription OnUpdateBook(
     isbn
     loanedOut
     loanedTo
+    loanedToUsername
     originalBookId
     originalOwnerEmail
     originalOwnerId
@@ -759,6 +764,7 @@ export const onUpdateBook = /* GraphQL */ `subscription OnUpdateBook(
     returnedAt
     title
     updatedAt
+    userName
     wouldRecommend
     __typename
   }

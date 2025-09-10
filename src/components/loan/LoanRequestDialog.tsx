@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-react';
 import { client } from '@/lib/amplifyClient';
 import {fetchUserAttributes, getCurrentUser} from 'aws-amplify/auth';
 import type { BookType } from '@/components/book/bookTypes';
+import { toast } from 'sonner';
 
 interface LoanRequestDialogProps {
     book: BookType;
@@ -83,7 +84,9 @@ const LoanRequestDialog: React.FC<LoanRequestDialogProps> = ({
             onSuccess?.();
 
             // Show success message
-            alert('Loan request sent successfully! The book owner will be notified.');
+            toast.success("📖 Request Sent!", {
+                description: "The book owner will be notified and can approve or decline your request."
+            });
 
         } catch (err) {
             console.error('Failed to create loan request:', err);

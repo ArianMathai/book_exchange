@@ -104,6 +104,7 @@ export const createBook = /* GraphQL */ `mutation CreateBook(
     isbn
     loanedOut
     loanedTo
+    loanedToUsername
     originalBookId
     originalOwnerEmail
     originalOwnerId
@@ -113,6 +114,7 @@ export const createBook = /* GraphQL */ `mutation CreateBook(
     returnedAt
     title
     updatedAt
+    userName
     wouldRecommend
     __typename
   }
@@ -421,6 +423,7 @@ export const deleteBook = /* GraphQL */ `mutation DeleteBook(
     isbn
     loanedOut
     loanedTo
+    loanedToUsername
     originalBookId
     originalOwnerEmail
     originalOwnerId
@@ -430,6 +433,7 @@ export const deleteBook = /* GraphQL */ `mutation DeleteBook(
     returnedAt
     title
     updatedAt
+    userName
     wouldRecommend
     __typename
   }
@@ -738,6 +742,7 @@ export const updateBook = /* GraphQL */ `mutation UpdateBook(
     isbn
     loanedOut
     loanedTo
+    loanedToUsername
     originalBookId
     originalOwnerEmail
     originalOwnerId
@@ -747,6 +752,7 @@ export const updateBook = /* GraphQL */ `mutation UpdateBook(
     returnedAt
     title
     updatedAt
+    userName
     wouldRecommend
     __typename
   }

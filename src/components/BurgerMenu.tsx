@@ -9,6 +9,7 @@ import {useEffect, useState} from 'react';
 import {fetchUserAttributes} from "aws-amplify/auth";
 import {client} from "@/lib/amplifyClient.ts";
 import {useNotifications} from "@/context/notificationsContext.tsx";
+import {Toaster} from "@/components/ui/sonner.tsx";
 
 
 //TODO: Enable real time subscriptions, so that the badge showing number of unread notifications, shows this number
@@ -280,6 +281,7 @@ const BurgerMenu: React.FC = () => {
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
                 <Outlet />
+                <Toaster position={"top-center"} richColors/>
             </main>
         </div>
     );

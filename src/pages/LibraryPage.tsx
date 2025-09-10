@@ -49,8 +49,14 @@ const LibraryPage: React.FC = () => {
                     'createdAt',
                     'loanedOut',
                     'loanedTo',
+                    'loanedToUsername',
                     'imageSource',
-                    'imageUrl'
+                    'imageUrl',
+                    'isOriginalCopy',
+                    'originalOwnerId',
+                    'originalOwnerEmail',
+                    'originalOwnerUsername',
+                    'borrowStatus'
                 ]
             });
 
@@ -70,10 +76,16 @@ const LibraryPage: React.FC = () => {
                 createdAt: book.createdAt,
                 loanedOut: book.loanedOut,
                 loanedTo: book.loanedTo,
+                loanedToUsername: book.loanedToUsername,
                 imageUrl: book.imageUrl,
                 imageSource: book.imageSource === 'manual' || book.imageSource === 'google_books'
                     ? book.imageSource
                     : null, // Normalize to 'manual', 'google_books', or null
+                isOriginalCopy: book.isOriginalCopy,
+                originalOwnerId: book.originalOwnerId,
+                originalOwnerEmail: book.originalOwnerEmail,
+                originalOwnerUsername: book.originalOwnerUsername,
+                borrowStatus: book.borrowStatus
             }));
             console.log('Transformed books:', transformedBooks);
             setBooks(transformedBooks);

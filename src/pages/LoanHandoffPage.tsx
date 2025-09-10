@@ -19,6 +19,7 @@ import { getCurrentUser } from 'aws-amplify/auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNotifications } from '@/context/notificationsContext';
 import LoanChat from '@/components/chat/LoanChat';
+import { toast } from 'sonner';
 
 const LoanHandoffPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -124,39 +125,41 @@ const LoanHandoffPage: React.FC = () => {
     useEffect(() => {
         if (!id || !currentUserId) return;
 
-        console.log('Setting up LoanHandoff subscription for:', id);
-        
+
         const subscription = client.models.LoanHandoff.onUpdate({
             filter: {
                 id: { eq: id }
             }
         }).subscribe({
             next: (updatedHandoff) => {
-                console.log('LoanHandoff updated via subscription:', updatedHandoff);
                 setRealtimeHandoff(updatedHandoff);
                 
                 // Check if both parties are now confirmed
                 if (updatedHandoff.lenderConfirmed && updatedHandoff.borrowerConfirmed && !updatedHandoff.completedAt) {
-                    console.log('Both parties confirmed - creating active loan');
-                    
+
                     // Trigger active loan creation automatically
                     client.mutations.createActiveLoanMutation({
                         loanHandoffId: updatedHandoff.id
                     }).then((result) => {
                         if (result.data?.success) {
-                            console.log('Active loan created successfully via subscription:', result.data.activeLoanId);
-                            alert('Handoff completed! The loan is now active.');
+                            toast.success("🎉 Handoff Complete!", {
+                                description: "The loan is now active and ready to use."
+                            });
                             navigate('/inbox');
                         } else {
                             console.error('Failed to create active loan via subscription:', result.data?.error);
                             // Still show success to user since the handoff was completed
-                            alert('Handoff completed! The loan is now active.');
+                            toast.success("🎉 Handoff Complete!", {
+                                description: "The loan is now active and ready to use."
+                            });
                             navigate('/inbox');
                         }
                     }).catch((error) => {
                         console.error('Error creating active loan via subscription:', error);
                         // Still show success to user since the handoff was completed
-                        alert('Handoff completed! The loan is now active.');
+                        toast.success("🎉 Handoff Complete!", {
+                            description: "The loan is now active and ready to use."
+                        });
                         navigate('/inbox');
                     });
                 }
@@ -225,7 +228,9 @@ const LoanHandoffPage: React.FC = () => {
             queryClient.invalidateQueries({ queryKey: ['loanRequest'] });
             
             if (!data.bothConfirmed) {
-                alert('Handoff confirmed! Waiting for the other party to confirm.');
+                toast.success("Confirmation Received", {
+                    description: "Waiting for the other party to confirm."
+                });
             }
             // If both confirmed, the subscription will handle the success message and navigation
         }

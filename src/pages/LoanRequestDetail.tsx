@@ -9,6 +9,7 @@ import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNotifications } from '@/context/notificationsContext';
 import { sanitizeEmail, sanitizeContent } from '@/lib/sanitization';
+import { toast } from 'sonner';
 
 
 const LoanRequestDetail: React.FC = () => {
@@ -149,13 +150,17 @@ const LoanRequestDetail: React.FC = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['loanRequest', id] });
-            alert('Loan request approved! Both parties have been notified and a chat has been created to coordinate the book handoff.');
+            toast.success("📚 Loan Approved!", {
+                description: "Both parties have been notified and a chat has been created to coordinate the book handoff."
+            });
             navigate('/inbox');
         },
         onError: (error) => {
             console.error('Failed to approve loan request:', error);
             const errorMessage = error instanceof Error ? error.message : 'Failed to approve loan request. Please try again.';
-            alert(errorMessage);
+            toast.error("Unable to Approve", {
+                description: errorMessage
+            });
         }
     });
 
@@ -189,12 +194,16 @@ const LoanRequestDetail: React.FC = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['loanRequest', id] });
-            alert('Loan request denied. The borrower has been notified.');
+            toast.success("Request Declined", {
+                description: "The borrower has been notified of your decision."
+            });
             navigate('/inbox');
         },
         onError: (error) => {
             console.error('Failed to deny loan request:', error);
-            alert('Failed to deny loan request. Please try again.');
+            toast.error("Unable to Decline", {
+                description: "Failed to deny loan request. Please try again."
+            });
         }
     });
 

@@ -161,18 +161,48 @@ export const handler: AppSyncResolverHandler<CreateActiveLoanArgs, CreateActiveL
 
         const currentTime = new Date();
 
-        // STEP 7: Create borrowed book copy for the borrower
+        // STEP 7: Fetch borrower's public profile to get username
+        const borrowerProfileResult = await client.models.PublicProfile.list({
+            filter: { userId: { eq: loanRequest.requesterId } }
+        });
+
+        const borrowerProfile = borrowerProfileResult.data?.[0];
+        if (!borrowerProfile) {
+            return {
+                success: false,
+                message: 'Borrower public profile not found',
+                error: 'BORROWER_PROFILE_NOT_FOUND'
+            };
+        }
+
+        // STEP 7.1: Fetch original owner's public profile to get username
+        const originalOwnerProfileResult = await client.models.PublicProfile.list({
+            filter: { userId: { eq: loanRequest.lenderId } }
+        });
+
+        const originalOwnerProfile = originalOwnerProfileResult.data?.[0];
+        if (!originalOwnerProfile) {
+            return {
+                success: false,
+                message: 'Original owner public profile not found',
+                error: 'ORIGINAL_OWNER_PROFILE_NOT_FOUND'
+            };
+        }
+
+        // STEP 8: Create borrowed book copy for the borrower
         const borrowedBookResult = await client.models.Book.create({
             title: originalBook.title,
             author: originalBook.author,
             isbn: originalBook.isbn,
             ownerId: loanRequest.requesterId, // Borrower is now the "owner" of this copy
-            ownerEmail: loanRequest.requesterId, //TODO: Will need to fetch actual email if needed
+            ownerEmail: borrowerProfile.email, // Use actual email from profile
+            userName: borrowerProfile.username, // Use actual username from profile
             loanedOut: false, // This copy is not loaned out
             loanedTo: null,
             isOriginalCopy: false,
             originalOwnerId: loanRequest.lenderId,
             originalOwnerEmail: originalBook.ownerEmail,
+            originalOwnerUsername: originalOwnerProfile.username,
             originalBookId: originalBook.id,
             borrowStatus: 'active',
             borrowedAt: currentTime.toISOString(),
@@ -185,7 +215,7 @@ export const handler: AppSyncResolverHandler<CreateActiveLoanArgs, CreateActiveL
             throw new Error('Failed to create borrowed book copy');
         }
 
-        // STEP 8: Create ActiveLoan record
+        // STEP 9: Create ActiveLoan record
         const activeLoanResult = await client.models.ActiveLoan.create({
             originalBookId: originalBook.id,
             borrowedBookId: borrowedBookResult.data.id,
@@ -202,27 +232,28 @@ export const handler: AppSyncResolverHandler<CreateActiveLoanArgs, CreateActiveL
             throw new Error('Failed to create active loan record');
         }
 
-        // STEP 9: Update original book to mark as loaned out
+        // STEP 10: Update original book to mark as loaned out
         await client.models.Book.update({
             id: originalBook.id,
             loanedOut: true,
-            loanedTo: loanRequest.requesterId
+            loanedTo: loanRequest.requesterId,
+            loanedToUsername: borrowerProfile.username,
         });
 
-        // STEP 10: Update borrowed book copy with activeLoanId reference
+        // STEP 11: Update borrowed book copy with activeLoanId reference
         await client.models.Book.update({
             id: borrowedBookResult.data.id,
             activeLoanId: activeLoanResult.data.id
         });
 
-        // STEP 11: Update loan request status to completed and set completedAt
+        // STEP 12: Update loan request status to completed and set completedAt
         await client.models.LoanRequest.update({
             id: loanRequest.id,
             status: 'completed',
             completedAt: currentTime.toISOString()
         });
 
-        // STEP 12: Send notifications to both parties
+        // STEP 13: Send notifications to both parties
         try {
             const safeBookTitle = sanitizeContent(originalBook.title || 'Unknown Book', 100);
 

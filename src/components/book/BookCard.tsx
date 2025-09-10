@@ -147,7 +147,12 @@ const BookCard: React.FC<BookCardProps> = ({ book, className, distance }) => {
 
                             {/* Right: Availability Badge */}
                             <div className="flex-shrink-0">
-                                {book.loanedOut ? (
+                                {book.isOriginalCopy === false ? (
+                                    <Badge className="max-w-[120px] truncate text-ellipsis whitespace-nowrap bg-blue-100 text-blue-800 text-xs sm:text-sm">
+                                        <AlertCircle className="w-3.5 sm:w-4 h-3.5 sm:h-4 mr-0.5 sm:mr-1" />
+                                        On Loan
+                                    </Badge>
+                                ) : book.loanedOut ? (
                                     <Badge className="max-w-[120px] truncate text-ellipsis whitespace-nowrap bg-red-100 text-red-800 text-xs sm:text-sm">
                                         <AlertCircle className="w-3.5 sm:w-4 h-3.5 sm:h-4 mr-0.5 sm:mr-1" />
                                         Loaned Out
@@ -185,7 +190,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, className, distance }) => {
                             {book.loanedOut && book.loanedTo && (
                                 <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-red-50 rounded-lg border border-red-100">
                                     <p className="text-xs sm:text-sm text-red-700 break-words">
-                                        <span className="font-medium">Loaned to:</span> {book.loanedTo}
+                                        <span className="font-medium">Loaned to:</span> {book.loanedToUsername}
                                     </p>
                                 </div>
                             )}

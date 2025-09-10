@@ -55,9 +55,13 @@ const BookDetailsPage: React.FC = () => {
             createdAt: data.createdAt,
             loanedOut: data.loanedOut,
             loanedTo: data.loanedTo,
+            loanedToUsername: data.loanedToUsername,
             imageUrl: data.imageUrl ?? undefined,
             imageSource: data.imageSource === 'manual' || data.imageSource === 'google_books' ? data.imageSource : null,
             isOriginalCopy: data.isOriginalCopy,
+            originalOwnerId: data.originalOwnerId,
+            originalOwnerEmail: data.originalOwnerEmail,
+            originalOwnerUsername: data.originalOwnerUsername,
             borrowStatus: data.borrowStatus,
           };
           setBook(transformed);
@@ -174,18 +178,18 @@ const BookDetailsPage: React.FC = () => {
                 )}
 
                 <p>
-                  <span className="font-medium">Owner:</span> {book.ownerEmail}
+                  <span className="font-medium">Owner:</span> {book.originalOwnerUsername}
                 </p>
 
                 <div className="flex items-center gap-2">
                   <span className="font-medium">Status:</span>
                   <span className={`px-2 py-1 rounded text-sm font-medium ${
-                      book.loanedOut
+                      !book.isOriginalCopy
                           ? 'bg-red-100 text-red-800'
                           : 'bg-green-100 text-green-800'
                   }`}>
-                  {book.loanedOut ? (
-                      book.loanedTo ? `Loaned to ${book.loanedTo}` : 'Loaned out'
+                  {!book.isOriginalCopy ? (
+                      book.loanedToUsername ? `Loaned to ${book.loanedToUsername}` : 'Loaned out'
                   ) : 'Available'}
                 </span>
                 </div>
@@ -201,14 +205,20 @@ const BookDetailsPage: React.FC = () => {
                     </div>
                 )}
 
-                {/* Show message if user is owner */}
-                {isOwner && (
+                {/* Show message if user is owner or if it's a borrowed book */}
+                {book.isOriginalCopy === false ? (
+                    <div className="pt-4">
+                      <p className="text-sm text-blue-600 italic">
+                        On loan from - {book.originalOwnerUsername}
+                      </p>
+                    </div>
+                ) : isOwner ? (
                     <div className="pt-4">
                       <p className="text-sm text-slate-500 italic">
                         This is your book
                       </p>
                     </div>
-                )}
+                ) : null}
 
                 {/* Show message if book is already loaned */}
                 {!isOwner && book.loanedOut && (

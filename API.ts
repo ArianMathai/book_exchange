@@ -116,6 +116,7 @@ export type Book = {
   isbn?: string | null,
   loanedOut: boolean,
   loanedTo?: string | null,
+  loanedToUsername?: string | null,
   originalBookId?: string | null,
   originalOwnerEmail?: string | null,
   originalOwnerId?: string | null,
@@ -125,6 +126,7 @@ export type Book = {
   returnedAt?: string | null,
   title: string,
   updatedAt: string,
+  userName?: string | null,
   wouldRecommend?: boolean | null,
 };
 
@@ -332,6 +334,7 @@ export type ModelBookFilterInput = {
   isbn?: ModelStringInput | null,
   loanedOut?: ModelBooleanInput | null,
   loanedTo?: ModelStringInput | null,
+  loanedToUsername?: ModelStringInput | null,
   not?: ModelBookFilterInput | null,
   or?: Array< ModelBookFilterInput | null > | null,
   originalBookId?: ModelStringInput | null,
@@ -343,6 +346,7 @@ export type ModelBookFilterInput = {
   returnedAt?: ModelStringInput | null,
   title?: ModelStringInput | null,
   updatedAt?: ModelStringInput | null,
+  userName?: ModelStringInput | null,
   wouldRecommend?: ModelBooleanInput | null,
 };
 
@@ -611,6 +615,7 @@ export type ModelBookConditionInput = {
   isbn?: ModelStringInput | null,
   loanedOut?: ModelBooleanInput | null,
   loanedTo?: ModelStringInput | null,
+  loanedToUsername?: ModelStringInput | null,
   not?: ModelBookConditionInput | null,
   or?: Array< ModelBookConditionInput | null > | null,
   originalBookId?: ModelStringInput | null,
@@ -622,6 +627,7 @@ export type ModelBookConditionInput = {
   returnedAt?: ModelStringInput | null,
   title?: ModelStringInput | null,
   updatedAt?: ModelStringInput | null,
+  userName?: ModelStringInput | null,
   wouldRecommend?: ModelBooleanInput | null,
 };
 
@@ -640,6 +646,7 @@ export type CreateBookInput = {
   isbn?: string | null,
   loanedOut: boolean,
   loanedTo?: string | null,
+  loanedToUsername?: string | null,
   originalBookId?: string | null,
   originalOwnerEmail?: string | null,
   originalOwnerId?: string | null,
@@ -647,6 +654,7 @@ export type CreateBookInput = {
   ownerId: string,
   returnedAt?: string | null,
   title: string,
+  userName?: string | null,
   wouldRecommend?: boolean | null,
 };
 
@@ -921,6 +929,7 @@ export type UpdateBookInput = {
   isbn?: string | null,
   loanedOut?: boolean | null,
   loanedTo?: string | null,
+  loanedToUsername?: string | null,
   originalBookId?: string | null,
   originalOwnerEmail?: string | null,
   originalOwnerId?: string | null,
@@ -928,6 +937,7 @@ export type UpdateBookInput = {
   ownerId?: string | null,
   returnedAt?: string | null,
   title?: string | null,
+  userName?: string | null,
   wouldRecommend?: boolean | null,
 };
 
@@ -1099,6 +1109,7 @@ export type ModelSubscriptionBookFilterInput = {
   isbn?: ModelSubscriptionStringInput | null,
   loanedOut?: ModelSubscriptionBooleanInput | null,
   loanedTo?: ModelSubscriptionStringInput | null,
+  loanedToUsername?: ModelSubscriptionStringInput | null,
   or?: Array< ModelSubscriptionBookFilterInput | null > | null,
   originalBookId?: ModelSubscriptionStringInput | null,
   originalOwnerEmail?: ModelSubscriptionStringInput | null,
@@ -1109,6 +1120,7 @@ export type ModelSubscriptionBookFilterInput = {
   returnedAt?: ModelSubscriptionStringInput | null,
   title?: ModelSubscriptionStringInput | null,
   updatedAt?: ModelSubscriptionStringInput | null,
+  userName?: ModelSubscriptionStringInput | null,
   wouldRecommend?: ModelSubscriptionBooleanInput | null,
 };
 
@@ -1289,6 +1301,7 @@ export type GetBookQuery = {
     isbn?: string | null,
     loanedOut: boolean,
     loanedTo?: string | null,
+    loanedToUsername?: string | null,
     originalBookId?: string | null,
     originalOwnerEmail?: string | null,
     originalOwnerId?: string | null,
@@ -1298,6 +1311,7 @@ export type GetBookQuery = {
     returnedAt?: string | null,
     title: string,
     updatedAt: string,
+    userName?: string | null,
     wouldRecommend?: boolean | null,
   } | null,
 };
@@ -1596,6 +1610,7 @@ export type ListBooksQuery = {
       isbn?: string | null,
       loanedOut: boolean,
       loanedTo?: string | null,
+      loanedToUsername?: string | null,
       originalBookId?: string | null,
       originalOwnerEmail?: string | null,
       originalOwnerId?: string | null,
@@ -1605,6 +1620,7 @@ export type ListBooksQuery = {
       returnedAt?: string | null,
       title: string,
       updatedAt: string,
+      userName?: string | null,
       wouldRecommend?: boolean | null,
     } | null >,
     nextToken?: string | null,
@@ -1931,6 +1947,7 @@ export type CreateBookMutation = {
     isbn?: string | null,
     loanedOut: boolean,
     loanedTo?: string | null,
+    loanedToUsername?: string | null,
     originalBookId?: string | null,
     originalOwnerEmail?: string | null,
     originalOwnerId?: string | null,
@@ -1940,6 +1957,7 @@ export type CreateBookMutation = {
     returnedAt?: string | null,
     title: string,
     updatedAt: string,
+    userName?: string | null,
     wouldRecommend?: boolean | null,
   } | null,
 };
@@ -2239,6 +2257,7 @@ export type DeleteBookMutation = {
     isbn?: string | null,
     loanedOut: boolean,
     loanedTo?: string | null,
+    loanedToUsername?: string | null,
     originalBookId?: string | null,
     originalOwnerEmail?: string | null,
     originalOwnerId?: string | null,
@@ -2248,6 +2267,7 @@ export type DeleteBookMutation = {
     returnedAt?: string | null,
     title: string,
     updatedAt: string,
+    userName?: string | null,
     wouldRecommend?: boolean | null,
   } | null,
 };
@@ -2547,6 +2567,7 @@ export type UpdateBookMutation = {
     isbn?: string | null,
     loanedOut: boolean,
     loanedTo?: string | null,
+    loanedToUsername?: string | null,
     originalBookId?: string | null,
     originalOwnerEmail?: string | null,
     originalOwnerId?: string | null,
@@ -2556,6 +2577,7 @@ export type UpdateBookMutation = {
     returnedAt?: string | null,
     title: string,
     updatedAt: string,
+    userName?: string | null,
     wouldRecommend?: boolean | null,
   } | null,
 };
@@ -2856,6 +2878,7 @@ export type OnCreateBookSubscription = {
     isbn?: string | null,
     loanedOut: boolean,
     loanedTo?: string | null,
+    loanedToUsername?: string | null,
     originalBookId?: string | null,
     originalOwnerEmail?: string | null,
     originalOwnerId?: string | null,
@@ -2865,6 +2888,7 @@ export type OnCreateBookSubscription = {
     returnedAt?: string | null,
     title: string,
     updatedAt: string,
+    userName?: string | null,
     wouldRecommend?: boolean | null,
   } | null,
 };
@@ -3169,6 +3193,7 @@ export type OnDeleteBookSubscription = {
     isbn?: string | null,
     loanedOut: boolean,
     loanedTo?: string | null,
+    loanedToUsername?: string | null,
     originalBookId?: string | null,
     originalOwnerEmail?: string | null,
     originalOwnerId?: string | null,
@@ -3178,6 +3203,7 @@ export type OnDeleteBookSubscription = {
     returnedAt?: string | null,
     title: string,
     updatedAt: string,
+    userName?: string | null,
     wouldRecommend?: boolean | null,
   } | null,
 };
@@ -3482,6 +3508,7 @@ export type OnUpdateBookSubscription = {
     isbn?: string | null,
     loanedOut: boolean,
     loanedTo?: string | null,
+    loanedToUsername?: string | null,
     originalBookId?: string | null,
     originalOwnerEmail?: string | null,
     originalOwnerId?: string | null,
@@ -3491,6 +3518,7 @@ export type OnUpdateBookSubscription = {
     returnedAt?: string | null,
     title: string,
     updatedAt: string,
+    userName?: string | null,
     wouldRecommend?: boolean | null,
   } | null,
 };

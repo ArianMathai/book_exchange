@@ -32,16 +32,19 @@ const schema = a.schema({
         isbn: a.string(), // optional
         ownerId: a.string().required(), // Current owner (original owner or borrower)
         ownerEmail: a.string().required(),
-        // createdAt: a.datetime().required(),
+        userName: a.string(), // Username of the current owner
+
 
         // Loan status for original books
         loanedOut: a.boolean().required(),
         loanedTo: a.string(), // borrower ID when loaned out
+        loanedToUsername: a.string(),
 
         // For borrowed books (copies in borrower's library)
         isOriginalCopy: a.boolean().default(true), // false for borrowed books
         originalOwnerId: a.string(), // ID of actual owner (for borrowed books only)
         originalOwnerEmail: a.string(), // Email of actual owner (for borrowed books only)
+        originalOwnerUsername: a.string(), // Username of actual owner (for borrowed books only)
         originalBookId: a.string(), // Reference to the original book record
         activeLoanId: a.string(), // reference to ActiveLoan record
 

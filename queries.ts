@@ -63,6 +63,7 @@ export const getBook = /* GraphQL */ `query GetBook($id: ID!) {
     isbn
     loanedOut
     loanedTo
+    loanedToUsername
     originalBookId
     originalOwnerEmail
     originalOwnerId
@@ -72,6 +73,7 @@ export const getBook = /* GraphQL */ `query GetBook($id: ID!) {
     returnedAt
     title
     updatedAt
+    userName
     wouldRecommend
     __typename
   }
@@ -354,6 +356,7 @@ export const listBooks = /* GraphQL */ `query ListBooks(
       isbn
       loanedOut
       loanedTo
+      loanedToUsername
       originalBookId
       originalOwnerEmail
       originalOwnerId
@@ -363,6 +366,7 @@ export const listBooks = /* GraphQL */ `query ListBooks(
       returnedAt
       title
       updatedAt
+      userName
       wouldRecommend
       __typename
     }
