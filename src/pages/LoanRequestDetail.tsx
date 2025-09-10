@@ -8,6 +8,7 @@ import { client } from '@/lib/amplifyClient';
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNotifications } from '@/context/notificationsContext';
+import { sanitizeEmail, sanitizeContent } from '@/lib/sanitization';
 
 
 const LoanRequestDetail: React.FC = () => {
@@ -86,74 +87,75 @@ const LoanRequestDetail: React.FC = () => {
         enabled: !!loanRequest?.requesterId && !isRequester
     });
 
-    // Approve mutation
+    // Fetch current user's public profile for username
+    const { data: currentUserProfile } = useQuery({
+        queryKey: ['currentUserProfile', currentUserId],
+        queryFn: async () => {
+            if (!currentUserId) throw new Error('No current user ID');
+            
+            const result = await client.models.PublicProfile.list({
+                filter: { userId: { eq: currentUserId } }
+            });
+            
+            return result.data?.[0] || null;
+        },
+        enabled: !!currentUserId
+    });
+
+
+
+
+    // SECURITY: Secure approve mutation using server-side validation and automatic chat creation
     const approveMutation = useMutation({
         mutationFn: async (duration: number) => {
-            if (!loanRequest || !currentUserId) throw new Error('Missing data');
+            if (!loanRequest || !currentUserId || !currentUserProfile) {
+                throw new Error('Missing data or user profile');
+            }
             
-            const userAttributes = await fetchUserAttributes();
-            const currentUserEmail = userAttributes.email ?? 'The lender';
-            
-            // Update loan request status
-            await client.models.LoanRequest.update({
-                id: loanRequest.id,
-                status: 'approved',
-                approvedDuration: duration,
-                respondedAt: new Date().toISOString(),
-                dueDate: new Date(Date.now() + duration * 24 * 60 * 60 * 1000).toISOString()
-            });
-
-            // Create LoanHandoff record to initiate handoff process
-            const handoffResult = await client.models.LoanHandoff.create({
+            // SECURITY: Single server-side call handles all approval logic with automatic chat creation
+            // This eliminates all client-side security vulnerabilities
+            const result = await client.mutations.approveLoanRequestMutation({
                 loanRequestId: loanRequest.id,
-                requesterId: loanRequest.requesterId,
-                lenderId: loanRequest.lenderId,
-                lenderConfirmed: false,
-                borrowerConfirmed: false
+                approvedDuration: duration,
+                userName: currentUserProfile.username,
             });
 
-            if (!handoffResult.data) {
-                throw new Error('Failed to create handoff record');
+            if (!result.data) {
+                throw new Error('No response from server');
             }
 
-            // Update loan request status to meeting_arranged
-            await client.models.LoanRequest.update({
-                id: loanRequest.id,
-                status: 'meeting_arranged'
-            });
-            
-            // Send handoff_ready notifications to both users
-            await Promise.all([
-                // Notification to borrower
-                client.models.Notification.create({
-                    userId: loanRequest.requesterId,
-                    type: 'handoff_ready',
-                    title: 'Loan approved - Arrange pickup!',
-                    message: `${currentUserEmail} has approved your request to borrow "${book?.title}". Click to coordinate the book handoff.`,
-                    loanRequestId: loanRequest.id,
-                    handoffId: handoffResult.data.id,
-                    bookId: loanRequest.bookId
-                }),
-                // Notification to lender
-                client.models.Notification.create({
-                    userId: loanRequest.lenderId,
-                    type: 'handoff_ready',
-                    title: 'Loan approved - Arrange handoff!',
-                    message: `You've approved the loan request for "${book?.title}". Click to coordinate the book handoff with the borrower.`,
-                    loanRequestId: loanRequest.id,
-                    handoffId: handoffResult.data.id,
-                    bookId: loanRequest.bookId
-                })
-            ]);
+            const { success, message, error, chatId } = result.data;
+
+            if (!success) {
+                // Handle specific server-side validation errors
+                switch (error) {
+                    case 'UNAUTHORIZED':
+                        throw new Error('You are not authorized to approve this loan request.');
+                    case 'LOAN_REQUEST_NOT_FOUND':
+                        throw new Error('Loan request not found.');
+                    case 'INVALID_STATUS':
+                        throw new Error('This loan request cannot be approved in its current state.');
+                    case 'INVALID_DURATION':
+                        throw new Error('Invalid loan duration specified.');
+                    case 'BOOK_NOT_FOUND':
+                        throw new Error('The associated book could not be found.');
+                    default:
+                        throw new Error(message || 'Failed to approve loan request. Please try again.');
+                }
+            }
+
+            console.log(`Loan approved successfully. ${chatId ? `Chat created: ${chatId}` : 'Chat creation skipped.'}`);
+            return result.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['loanRequest', id] });
-            alert('Loan request approved! Both parties have been notified to coordinate the book handoff.');
+            alert('Loan request approved! Both parties have been notified and a chat has been created to coordinate the book handoff.');
             navigate('/inbox');
         },
         onError: (error) => {
             console.error('Failed to approve loan request:', error);
-            alert('Failed to approve loan request. Please try again.');
+            const errorMessage = error instanceof Error ? error.message : 'Failed to approve loan request. Please try again.';
+            alert(errorMessage);
         }
     });
 
@@ -172,12 +174,15 @@ const LoanRequestDetail: React.FC = () => {
                 respondedAt: new Date().toISOString()
             });
             
-            // Send notification to requester
+            // Send notification to requester with sanitized content
+            const safeBookTitle = sanitizeContent(book?.title || 'Unknown Book', 100);
+            const safeUserEmail = sanitizeEmail(currentUserEmail);
+            
             await client.models.Notification.create({
                 userId: loanRequest.requesterId,
                 type: 'loan_rejected',
                 title: 'Loan request declined',
-                message: `${currentUserEmail} has declined your request to borrow "${book?.title}".`,
+                message: sanitizeContent(`${safeUserEmail} has declined your request to borrow "${safeBookTitle}".`),
                 loanRequestId: loanRequest.id,
                 bookId: loanRequest.bookId
             });

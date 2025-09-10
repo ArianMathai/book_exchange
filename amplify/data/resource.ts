@@ -1,5 +1,6 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import {addressAutocomplete} from "../functions/addressAutocomplete/resource";
+import {approveLoanRequest} from "../functions/approveLoanRequest/resource";
 
 const schema = a.schema({
 
@@ -141,7 +142,7 @@ const schema = a.schema({
     })
     .authorization(allow => [
         allow.ownerDefinedIn('userId'), // Owner can manage their profile
-        allow.authenticated().to(['read']) // All authenticated users can read
+        allow.authenticated().to(['read']), // All authenticated users can read
     ]),
 
     // Optional: Notifications system
@@ -184,10 +185,12 @@ const schema = a.schema({
         
         // Relationship to messages
         messages: a.hasMany('Message', 'chatId'),
-    }).authorization(allow => [
-        // Allow authenticated users to read chats they participate in
-        allow.ownerDefinedIn('lenderId').to(['read', 'update', "create"]),
-        allow.ownerDefinedIn('borrowerId').to(['read', 'update', "create"]),
+    })
+    .authorization(allow => [
+        // SECURITY: Completely removed 'create' permission - chat creation only through custom mutation
+        // Only participants can read and update their chats
+        allow.ownerDefinedIn('lenderId').to(['read', 'update']),
+        allow.ownerDefinedIn('borrowerId').to(['read', 'update']),
     ]),
 
     // Individual messages within chats
@@ -265,7 +268,29 @@ const schema = a.schema({
         .handler(a.handler.function(addressAutocomplete))
         .authorization((allow) => [allow.authenticated()]),
 
-});
+    // SECURITY: Secure loan approval mutation with automatic chat creation
+    // This replaces both loan approval and chat creation in one atomic operation
+    approveLoanRequestMutation: a
+        .mutation()
+        .arguments({
+            loanRequestId: a.string().required(),
+            approvedDuration: a.integer().required(),
+            userName: a.string().required(),
+        })
+        .returns(a.customType({
+            success: a.boolean().required(),
+            loanRequestId: a.string(),
+            chatId: a.string(),
+            message: a.string().required(),
+            error: a.string(),
+        }))
+        .handler(a.handler.function(approveLoanRequest))
+        .authorization((allow) => [allow.authenticated()]),
+
+}).authorization((allow) => [
+    // Grant Lambda function access to the entire API for approving loanRequests
+    allow.resource(approveLoanRequest)
+]);
 
 export type Schema = ClientSchema<typeof schema>;
 
