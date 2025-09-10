@@ -10,14 +10,94 @@ export type ActiveLoan = {
   dueDate?: string | null,
   id: string,
   isOverdue?: boolean | null,
+  loanRequest?: LoanRequest | null,
   loanRequestId: string,
   originalBookId: string,
   originalOwnerId: string,
   overdueNotificationsSent?: number | null,
-  owner?: string | null,
   startDate: string,
   updatedAt: string,
 };
+
+export type LoanRequest = {
+  __typename: "LoanRequest",
+  activeLoan?: ActiveLoan | null,
+  approvedDuration?: number | null,
+  bookId: string,
+  chat?: Chat | null,
+  completedAt?: string | null,
+  createdAt: string,
+  dueDate?: string | null,
+  id: string,
+  lenderId: string,
+  message?: string | null,
+  proposedDuration?: number | null,
+  requestedAt: string,
+  requesterId: string,
+  respondedAt?: string | null,
+  status?: LoanRequestStatus | null,
+  updatedAt: string,
+};
+
+export type Chat = {
+  __typename: "Chat",
+  borrowerEmail: string,
+  borrowerId: string,
+  borrowerUnreadCount?: number | null,
+  borrowerUsername?: string | null,
+  createdAt: string,
+  id: string,
+  lastMessageAt?: string | null,
+  lastMessagePreview?: string | null,
+  lenderEmail: string,
+  lenderId: string,
+  lenderUnreadCount?: number | null,
+  lenderUsername?: string | null,
+  loanRequest?: LoanRequest | null,
+  loanRequestId: string,
+  messages?: ModelMessageConnection | null,
+  updatedAt: string,
+};
+
+export type ModelMessageConnection = {
+  __typename: "ModelMessageConnection",
+  items:  Array<Message | null >,
+  nextToken?: string | null,
+};
+
+export type Message = {
+  __typename: "Message",
+  borrowerId: string,
+  chat?: Chat | null,
+  chatId: string,
+  content: string,
+  createdAt: string,
+  id: string,
+  isRead?: boolean | null,
+  lenderId: string,
+  messageType?: MessageMessageType | null,
+  readAt?: string | null,
+  senderEmail: string,
+  senderId: string,
+  senderUsername: string,
+  updatedAt: string,
+};
+
+export enum MessageMessageType {
+  system = "system",
+  text = "text",
+}
+
+
+export enum LoanRequestStatus {
+  approved = "approved",
+  cancelled = "cancelled",
+  completed = "completed",
+  meeting_arranged = "meeting_arranged",
+  pending = "pending",
+  rejected = "rejected",
+}
+
 
 export type Book = {
   __typename: "Book",
@@ -52,85 +132,6 @@ export enum BookBorrowStatus {
   active = "active",
   overdue = "overdue",
   returned = "returned",
-}
-
-
-export type Chat = {
-  __typename: "Chat",
-  borrowerEmail: string,
-  borrowerId: string,
-  borrowerUnreadCount?: number | null,
-  borrowerUsername?: string | null,
-  createdAt: string,
-  id: string,
-  lastMessageAt?: string | null,
-  lastMessagePreview?: string | null,
-  lenderEmail: string,
-  lenderId: string,
-  lenderUnreadCount?: number | null,
-  lenderUsername?: string | null,
-  loanRequest?: LoanRequest | null,
-  loanRequestId: string,
-  messages?: ModelMessageConnection | null,
-  updatedAt: string,
-};
-
-export type LoanRequest = {
-  __typename: "LoanRequest",
-  approvedDuration?: number | null,
-  bookId: string,
-  chat?: Chat | null,
-  completedAt?: string | null,
-  createdAt: string,
-  dueDate?: string | null,
-  id: string,
-  lenderId: string,
-  message?: string | null,
-  proposedDuration?: number | null,
-  requestedAt: string,
-  requesterId: string,
-  respondedAt?: string | null,
-  status?: LoanRequestStatus | null,
-  updatedAt: string,
-};
-
-export enum LoanRequestStatus {
-  approved = "approved",
-  cancelled = "cancelled",
-  completed = "completed",
-  meeting_arranged = "meeting_arranged",
-  pending = "pending",
-  rejected = "rejected",
-}
-
-
-export type ModelMessageConnection = {
-  __typename: "ModelMessageConnection",
-  items:  Array<Message | null >,
-  nextToken?: string | null,
-};
-
-export type Message = {
-  __typename: "Message",
-  borrowerId: string,
-  chat?: Chat | null,
-  chatId: string,
-  content: string,
-  createdAt: string,
-  id: string,
-  isRead?: boolean | null,
-  lenderId: string,
-  messageType?: MessageMessageType | null,
-  readAt?: string | null,
-  senderEmail: string,
-  senderId: string,
-  senderUsername: string,
-  updatedAt: string,
-};
-
-export enum MessageMessageType {
-  system = "system",
-  text = "text",
 }
 
 
@@ -229,7 +230,6 @@ export type ModelActiveLoanFilterInput = {
   originalBookId?: ModelStringInput | null,
   originalOwnerId?: ModelStringInput | null,
   overdueNotificationsSent?: ModelIntInput | null,
-  owner?: ModelStringInput | null,
   startDate?: ModelStringInput | null,
   updatedAt?: ModelStringInput | null,
 };
@@ -570,7 +570,6 @@ export type ModelActiveLoanConditionInput = {
   originalBookId?: ModelStringInput | null,
   originalOwnerId?: ModelStringInput | null,
   overdueNotificationsSent?: ModelIntInput | null,
-  owner?: ModelStringInput | null,
   startDate?: ModelStringInput | null,
   updatedAt?: ModelStringInput | null,
 };
@@ -586,6 +585,14 @@ export type CreateActiveLoanInput = {
   originalOwnerId: string,
   overdueNotificationsSent?: number | null,
   startDate: string,
+};
+
+export type CreateActiveLoanMutationReturnType = {
+  __typename: "CreateActiveLoanMutationReturnType",
+  activeLoanId?: string | null,
+  error?: string | null,
+  message: string,
+  success: boolean,
 };
 
 export type ModelBookConditionInput = {
@@ -1015,16 +1022,15 @@ export type ModelSubscriptionActiveLoanFilterInput = {
   and?: Array< ModelSubscriptionActiveLoanFilterInput | null > | null,
   borrowedBookId?: ModelSubscriptionStringInput | null,
   createdAt?: ModelSubscriptionStringInput | null,
-  currentBorrowerId?: ModelSubscriptionStringInput | null,
+  currentBorrowerId?: ModelStringInput | null,
   dueDate?: ModelSubscriptionStringInput | null,
   id?: ModelSubscriptionIDInput | null,
   isOverdue?: ModelSubscriptionBooleanInput | null,
   loanRequestId?: ModelSubscriptionStringInput | null,
   or?: Array< ModelSubscriptionActiveLoanFilterInput | null > | null,
   originalBookId?: ModelSubscriptionStringInput | null,
-  originalOwnerId?: ModelSubscriptionStringInput | null,
+  originalOwnerId?: ModelStringInput | null,
   overdueNotificationsSent?: ModelSubscriptionIntInput | null,
-  owner?: ModelStringInput | null,
   startDate?: ModelSubscriptionStringInput | null,
   updatedAt?: ModelSubscriptionStringInput | null,
 };
@@ -1235,11 +1241,27 @@ export type GetActiveLoanQuery = {
     dueDate?: string | null,
     id: string,
     isOverdue?: boolean | null,
+    loanRequest?:  {
+      __typename: "LoanRequest",
+      approvedDuration?: number | null,
+      bookId: string,
+      completedAt?: string | null,
+      createdAt: string,
+      dueDate?: string | null,
+      id: string,
+      lenderId: string,
+      message?: string | null,
+      proposedDuration?: number | null,
+      requestedAt: string,
+      requesterId: string,
+      respondedAt?: string | null,
+      status?: LoanRequestStatus | null,
+      updatedAt: string,
+    } | null,
     loanRequestId: string,
     originalBookId: string,
     originalOwnerId: string,
     overdueNotificationsSent?: number | null,
-    owner?: string | null,
     startDate: string,
     updatedAt: string,
   } | null,
@@ -1355,6 +1377,21 @@ export type GetLoanRequestQueryVariables = {
 export type GetLoanRequestQuery = {
   getLoanRequest?:  {
     __typename: "LoanRequest",
+    activeLoan?:  {
+      __typename: "ActiveLoan",
+      borrowedBookId: string,
+      createdAt: string,
+      currentBorrowerId: string,
+      dueDate?: string | null,
+      id: string,
+      isOverdue?: boolean | null,
+      loanRequestId: string,
+      originalBookId: string,
+      originalOwnerId: string,
+      overdueNotificationsSent?: number | null,
+      startDate: string,
+      updatedAt: string,
+    } | null,
     approvedDuration?: number | null,
     bookId: string,
     chat?:  {
@@ -1526,7 +1563,6 @@ export type ListActiveLoansQuery = {
       originalBookId: string,
       originalOwnerId: string,
       overdueNotificationsSent?: number | null,
-      owner?: string | null,
       startDate: string,
       updatedAt: string,
     } | null >,
@@ -1832,13 +1868,43 @@ export type CreateActiveLoanMutation = {
     dueDate?: string | null,
     id: string,
     isOverdue?: boolean | null,
+    loanRequest?:  {
+      __typename: "LoanRequest",
+      approvedDuration?: number | null,
+      bookId: string,
+      completedAt?: string | null,
+      createdAt: string,
+      dueDate?: string | null,
+      id: string,
+      lenderId: string,
+      message?: string | null,
+      proposedDuration?: number | null,
+      requestedAt: string,
+      requesterId: string,
+      respondedAt?: string | null,
+      status?: LoanRequestStatus | null,
+      updatedAt: string,
+    } | null,
     loanRequestId: string,
     originalBookId: string,
     originalOwnerId: string,
     overdueNotificationsSent?: number | null,
-    owner?: string | null,
     startDate: string,
     updatedAt: string,
+  } | null,
+};
+
+export type CreateActiveLoanMutationMutationVariables = {
+  loanHandoffId: string,
+};
+
+export type CreateActiveLoanMutationMutation = {
+  createActiveLoanMutation?:  {
+    __typename: "CreateActiveLoanMutationReturnType",
+    activeLoanId?: string | null,
+    error?: string | null,
+    message: string,
+    success: boolean,
   } | null,
 };
 
@@ -1956,6 +2022,21 @@ export type CreateLoanRequestMutationVariables = {
 export type CreateLoanRequestMutation = {
   createLoanRequest?:  {
     __typename: "LoanRequest",
+    activeLoan?:  {
+      __typename: "ActiveLoan",
+      borrowedBookId: string,
+      createdAt: string,
+      currentBorrowerId: string,
+      dueDate?: string | null,
+      id: string,
+      isOverdue?: boolean | null,
+      loanRequestId: string,
+      originalBookId: string,
+      originalOwnerId: string,
+      overdueNotificationsSent?: number | null,
+      startDate: string,
+      updatedAt: string,
+    } | null,
     approvedDuration?: number | null,
     bookId: string,
     chat?:  {
@@ -2109,11 +2190,27 @@ export type DeleteActiveLoanMutation = {
     dueDate?: string | null,
     id: string,
     isOverdue?: boolean | null,
+    loanRequest?:  {
+      __typename: "LoanRequest",
+      approvedDuration?: number | null,
+      bookId: string,
+      completedAt?: string | null,
+      createdAt: string,
+      dueDate?: string | null,
+      id: string,
+      lenderId: string,
+      message?: string | null,
+      proposedDuration?: number | null,
+      requestedAt: string,
+      requesterId: string,
+      respondedAt?: string | null,
+      status?: LoanRequestStatus | null,
+      updatedAt: string,
+    } | null,
     loanRequestId: string,
     originalBookId: string,
     originalOwnerId: string,
     overdueNotificationsSent?: number | null,
-    owner?: string | null,
     startDate: string,
     updatedAt: string,
   } | null,
@@ -2233,6 +2330,21 @@ export type DeleteLoanRequestMutationVariables = {
 export type DeleteLoanRequestMutation = {
   deleteLoanRequest?:  {
     __typename: "LoanRequest",
+    activeLoan?:  {
+      __typename: "ActiveLoan",
+      borrowedBookId: string,
+      createdAt: string,
+      currentBorrowerId: string,
+      dueDate?: string | null,
+      id: string,
+      isOverdue?: boolean | null,
+      loanRequestId: string,
+      originalBookId: string,
+      originalOwnerId: string,
+      overdueNotificationsSent?: number | null,
+      startDate: string,
+      updatedAt: string,
+    } | null,
     approvedDuration?: number | null,
     bookId: string,
     chat?:  {
@@ -2386,11 +2498,27 @@ export type UpdateActiveLoanMutation = {
     dueDate?: string | null,
     id: string,
     isOverdue?: boolean | null,
+    loanRequest?:  {
+      __typename: "LoanRequest",
+      approvedDuration?: number | null,
+      bookId: string,
+      completedAt?: string | null,
+      createdAt: string,
+      dueDate?: string | null,
+      id: string,
+      lenderId: string,
+      message?: string | null,
+      proposedDuration?: number | null,
+      requestedAt: string,
+      requesterId: string,
+      respondedAt?: string | null,
+      status?: LoanRequestStatus | null,
+      updatedAt: string,
+    } | null,
     loanRequestId: string,
     originalBookId: string,
     originalOwnerId: string,
     overdueNotificationsSent?: number | null,
-    owner?: string | null,
     startDate: string,
     updatedAt: string,
   } | null,
@@ -2510,6 +2638,21 @@ export type UpdateLoanRequestMutationVariables = {
 export type UpdateLoanRequestMutation = {
   updateLoanRequest?:  {
     __typename: "LoanRequest",
+    activeLoan?:  {
+      __typename: "ActiveLoan",
+      borrowedBookId: string,
+      createdAt: string,
+      currentBorrowerId: string,
+      dueDate?: string | null,
+      id: string,
+      isOverdue?: boolean | null,
+      loanRequestId: string,
+      originalBookId: string,
+      originalOwnerId: string,
+      overdueNotificationsSent?: number | null,
+      startDate: string,
+      updatedAt: string,
+    } | null,
     approvedDuration?: number | null,
     bookId: string,
     chat?:  {
@@ -2650,8 +2793,9 @@ export type UpdateUserMutation = {
 };
 
 export type OnCreateActiveLoanSubscriptionVariables = {
+  currentBorrowerId?: string | null,
   filter?: ModelSubscriptionActiveLoanFilterInput | null,
-  owner?: string | null,
+  originalOwnerId?: string | null,
 };
 
 export type OnCreateActiveLoanSubscription = {
@@ -2663,11 +2807,27 @@ export type OnCreateActiveLoanSubscription = {
     dueDate?: string | null,
     id: string,
     isOverdue?: boolean | null,
+    loanRequest?:  {
+      __typename: "LoanRequest",
+      approvedDuration?: number | null,
+      bookId: string,
+      completedAt?: string | null,
+      createdAt: string,
+      dueDate?: string | null,
+      id: string,
+      lenderId: string,
+      message?: string | null,
+      proposedDuration?: number | null,
+      requestedAt: string,
+      requesterId: string,
+      respondedAt?: string | null,
+      status?: LoanRequestStatus | null,
+      updatedAt: string,
+    } | null,
     loanRequestId: string,
     originalBookId: string,
     originalOwnerId: string,
     overdueNotificationsSent?: number | null,
-    owner?: string | null,
     startDate: string,
     updatedAt: string,
   } | null,
@@ -2790,6 +2950,21 @@ export type OnCreateLoanRequestSubscriptionVariables = {
 export type OnCreateLoanRequestSubscription = {
   onCreateLoanRequest?:  {
     __typename: "LoanRequest",
+    activeLoan?:  {
+      __typename: "ActiveLoan",
+      borrowedBookId: string,
+      createdAt: string,
+      currentBorrowerId: string,
+      dueDate?: string | null,
+      id: string,
+      isOverdue?: boolean | null,
+      loanRequestId: string,
+      originalBookId: string,
+      originalOwnerId: string,
+      overdueNotificationsSent?: number | null,
+      startDate: string,
+      updatedAt: string,
+    } | null,
     approvedDuration?: number | null,
     bookId: string,
     chat?:  {
@@ -2931,8 +3106,9 @@ export type OnCreateUserSubscription = {
 };
 
 export type OnDeleteActiveLoanSubscriptionVariables = {
+  currentBorrowerId?: string | null,
   filter?: ModelSubscriptionActiveLoanFilterInput | null,
-  owner?: string | null,
+  originalOwnerId?: string | null,
 };
 
 export type OnDeleteActiveLoanSubscription = {
@@ -2944,11 +3120,27 @@ export type OnDeleteActiveLoanSubscription = {
     dueDate?: string | null,
     id: string,
     isOverdue?: boolean | null,
+    loanRequest?:  {
+      __typename: "LoanRequest",
+      approvedDuration?: number | null,
+      bookId: string,
+      completedAt?: string | null,
+      createdAt: string,
+      dueDate?: string | null,
+      id: string,
+      lenderId: string,
+      message?: string | null,
+      proposedDuration?: number | null,
+      requestedAt: string,
+      requesterId: string,
+      respondedAt?: string | null,
+      status?: LoanRequestStatus | null,
+      updatedAt: string,
+    } | null,
     loanRequestId: string,
     originalBookId: string,
     originalOwnerId: string,
     overdueNotificationsSent?: number | null,
-    owner?: string | null,
     startDate: string,
     updatedAt: string,
   } | null,
@@ -3071,6 +3263,21 @@ export type OnDeleteLoanRequestSubscriptionVariables = {
 export type OnDeleteLoanRequestSubscription = {
   onDeleteLoanRequest?:  {
     __typename: "LoanRequest",
+    activeLoan?:  {
+      __typename: "ActiveLoan",
+      borrowedBookId: string,
+      createdAt: string,
+      currentBorrowerId: string,
+      dueDate?: string | null,
+      id: string,
+      isOverdue?: boolean | null,
+      loanRequestId: string,
+      originalBookId: string,
+      originalOwnerId: string,
+      overdueNotificationsSent?: number | null,
+      startDate: string,
+      updatedAt: string,
+    } | null,
     approvedDuration?: number | null,
     bookId: string,
     chat?:  {
@@ -3212,8 +3419,9 @@ export type OnDeleteUserSubscription = {
 };
 
 export type OnUpdateActiveLoanSubscriptionVariables = {
+  currentBorrowerId?: string | null,
   filter?: ModelSubscriptionActiveLoanFilterInput | null,
-  owner?: string | null,
+  originalOwnerId?: string | null,
 };
 
 export type OnUpdateActiveLoanSubscription = {
@@ -3225,11 +3433,27 @@ export type OnUpdateActiveLoanSubscription = {
     dueDate?: string | null,
     id: string,
     isOverdue?: boolean | null,
+    loanRequest?:  {
+      __typename: "LoanRequest",
+      approvedDuration?: number | null,
+      bookId: string,
+      completedAt?: string | null,
+      createdAt: string,
+      dueDate?: string | null,
+      id: string,
+      lenderId: string,
+      message?: string | null,
+      proposedDuration?: number | null,
+      requestedAt: string,
+      requesterId: string,
+      respondedAt?: string | null,
+      status?: LoanRequestStatus | null,
+      updatedAt: string,
+    } | null,
     loanRequestId: string,
     originalBookId: string,
     originalOwnerId: string,
     overdueNotificationsSent?: number | null,
-    owner?: string | null,
     startDate: string,
     updatedAt: string,
   } | null,
@@ -3352,6 +3576,21 @@ export type OnUpdateLoanRequestSubscriptionVariables = {
 export type OnUpdateLoanRequestSubscription = {
   onUpdateLoanRequest?:  {
     __typename: "LoanRequest",
+    activeLoan?:  {
+      __typename: "ActiveLoan",
+      borrowedBookId: string,
+      createdAt: string,
+      currentBorrowerId: string,
+      dueDate?: string | null,
+      id: string,
+      isOverdue?: boolean | null,
+      loanRequestId: string,
+      originalBookId: string,
+      originalOwnerId: string,
+      overdueNotificationsSent?: number | null,
+      startDate: string,
+      updatedAt: string,
+    } | null,
     approvedDuration?: number | null,
     bookId: string,
     chat?:  {

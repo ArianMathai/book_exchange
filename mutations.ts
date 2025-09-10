@@ -41,11 +41,27 @@ export const createActiveLoan = /* GraphQL */ `mutation CreateActiveLoan(
     dueDate
     id
     isOverdue
+    loanRequest {
+      approvedDuration
+      bookId
+      completedAt
+      createdAt
+      dueDate
+      id
+      lenderId
+      message
+      proposedDuration
+      requestedAt
+      requesterId
+      respondedAt
+      status
+      updatedAt
+      __typename
+    }
     loanRequestId
     originalBookId
     originalOwnerId
     overdueNotificationsSent
-    owner
     startDate
     updatedAt
     __typename
@@ -54,6 +70,19 @@ export const createActiveLoan = /* GraphQL */ `mutation CreateActiveLoan(
 ` as GeneratedMutation<
   APITypes.CreateActiveLoanMutationVariables,
   APITypes.CreateActiveLoanMutation
+>;
+export const createActiveLoanMutation = /* GraphQL */ `mutation CreateActiveLoanMutation($loanHandoffId: String!) {
+  createActiveLoanMutation(loanHandoffId: $loanHandoffId) {
+    activeLoanId
+    error
+    message
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.CreateActiveLoanMutationMutationVariables,
+  APITypes.CreateActiveLoanMutationMutation
 >;
 export const createBook = /* GraphQL */ `mutation CreateBook(
   $condition: ModelBookConditionInput
@@ -169,6 +198,21 @@ export const createLoanRequest = /* GraphQL */ `mutation CreateLoanRequest(
   $input: CreateLoanRequestInput!
 ) {
   createLoanRequest(condition: $condition, input: $input) {
+    activeLoan {
+      borrowedBookId
+      createdAt
+      currentBorrowerId
+      dueDate
+      id
+      isOverdue
+      loanRequestId
+      originalBookId
+      originalOwnerId
+      overdueNotificationsSent
+      startDate
+      updatedAt
+      __typename
+    }
     approvedDuration
     bookId
     chat {
@@ -327,11 +371,27 @@ export const deleteActiveLoan = /* GraphQL */ `mutation DeleteActiveLoan(
     dueDate
     id
     isOverdue
+    loanRequest {
+      approvedDuration
+      bookId
+      completedAt
+      createdAt
+      dueDate
+      id
+      lenderId
+      message
+      proposedDuration
+      requestedAt
+      requesterId
+      respondedAt
+      status
+      updatedAt
+      __typename
+    }
     loanRequestId
     originalBookId
     originalOwnerId
     overdueNotificationsSent
-    owner
     startDate
     updatedAt
     __typename
@@ -455,6 +515,21 @@ export const deleteLoanRequest = /* GraphQL */ `mutation DeleteLoanRequest(
   $input: DeleteLoanRequestInput!
 ) {
   deleteLoanRequest(condition: $condition, input: $input) {
+    activeLoan {
+      borrowedBookId
+      createdAt
+      currentBorrowerId
+      dueDate
+      id
+      isOverdue
+      loanRequestId
+      originalBookId
+      originalOwnerId
+      overdueNotificationsSent
+      startDate
+      updatedAt
+      __typename
+    }
     approvedDuration
     bookId
     chat {
@@ -613,11 +688,27 @@ export const updateActiveLoan = /* GraphQL */ `mutation UpdateActiveLoan(
     dueDate
     id
     isOverdue
+    loanRequest {
+      approvedDuration
+      bookId
+      completedAt
+      createdAt
+      dueDate
+      id
+      lenderId
+      message
+      proposedDuration
+      requestedAt
+      requesterId
+      respondedAt
+      status
+      updatedAt
+      __typename
+    }
     loanRequestId
     originalBookId
     originalOwnerId
     overdueNotificationsSent
-    owner
     startDate
     updatedAt
     __typename
@@ -741,6 +832,21 @@ export const updateLoanRequest = /* GraphQL */ `mutation UpdateLoanRequest(
   $input: UpdateLoanRequestInput!
 ) {
   updateLoanRequest(condition: $condition, input: $input) {
+    activeLoan {
+      borrowedBookId
+      createdAt
+      currentBorrowerId
+      dueDate
+      id
+      isOverdue
+      loanRequestId
+      originalBookId
+      originalOwnerId
+      overdueNotificationsSent
+      startDate
+      updatedAt
+      __typename
+    }
     approvedDuration
     bookId
     chat {

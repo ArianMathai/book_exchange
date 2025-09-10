@@ -1,6 +1,7 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import {addressAutocomplete} from "../functions/addressAutocomplete/resource";
 import {approveLoanRequest} from "../functions/approveLoanRequest/resource";
+import {createActiveLoan} from "../functions/createActiveLoan/resource";
 
 const schema = a.schema({
 
@@ -82,8 +83,9 @@ const schema = a.schema({
         // Calculated fields
         dueDate: a.datetime(), // Calculated when loan is completed
         
-        // Relationship to chat (one-to-one)
+        // Relationships (one-to-one)
         chat: a.hasOne('Chat', 'loanRequestId'),
+        activeLoan: a.hasOne('ActiveLoan', 'loanRequestId'),
     }).authorization(allow => [
         // Allow both requester and lender to read/update
         allow.ownerDefinedIn("requesterId").to(['read', "create", "update"]),
@@ -120,6 +122,7 @@ const schema = a.schema({
         originalOwnerId: a.string().required(),
         currentBorrowerId: a.string().required(),
         loanRequestId: a.string().required(),
+        loanRequest: a.belongsTo('LoanRequest', 'loanRequestId'),
 
         // Loan period
         startDate: a.datetime().required(),
@@ -129,8 +132,8 @@ const schema = a.schema({
         isOverdue: a.boolean().default(false),
         overdueNotificationsSent: a.integer().default(0),
     }).authorization(allow => [
-        allow.authenticated().to(['read']),
-        allow.owner().to(['create', 'read', 'update', 'delete']),
+        allow.ownerDefinedIn("originalOwnerId").to(['read', "update"]),
+        allow.ownerDefinedIn("currentBorrowerId").to(['read', "update"]),
     ]),
 
     // Public profile accessible to all authenticated users
@@ -287,9 +290,27 @@ const schema = a.schema({
         .handler(a.handler.function(approveLoanRequest))
         .authorization((allow) => [allow.authenticated()]),
 
+    // SECURITY: Secure active loan creation mutation
+    // This creates ActiveLoan and updates all related records when handoff is completed
+    createActiveLoanMutation: a
+        .mutation()
+        .arguments({
+            loanHandoffId: a.string().required(),
+        })
+        .returns(a.customType({
+            success: a.boolean().required(),
+            activeLoanId: a.string(),
+            message: a.string().required(),
+            error: a.string(),
+        }))
+        .handler(a.handler.function(createActiveLoan))
+        .authorization((allow) => [allow.authenticated()]),
+
 }).authorization((allow) => [
     // Grant Lambda function access to the entire API for approving loanRequests
-    allow.resource(approveLoanRequest)
+    allow.resource(approveLoanRequest),
+    // Grant Lambda function access to the entire API for creating active loans
+    allow.resource(createActiveLoan)
 ]);
 
 export type Schema = ClientSchema<typeof schema>;

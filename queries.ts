@@ -16,11 +16,27 @@ export const getActiveLoan = /* GraphQL */ `query GetActiveLoan($id: ID!) {
     dueDate
     id
     isOverdue
+    loanRequest {
+      approvedDuration
+      bookId
+      completedAt
+      createdAt
+      dueDate
+      id
+      lenderId
+      message
+      proposedDuration
+      requestedAt
+      requesterId
+      respondedAt
+      status
+      updatedAt
+      __typename
+    }
     loanRequestId
     originalBookId
     originalOwnerId
     overdueNotificationsSent
-    owner
     startDate
     updatedAt
     __typename
@@ -126,6 +142,21 @@ export const getLoanHandoff = /* GraphQL */ `query GetLoanHandoff($id: ID!) {
 >;
 export const getLoanRequest = /* GraphQL */ `query GetLoanRequest($id: ID!) {
   getLoanRequest(id: $id) {
+    activeLoan {
+      borrowedBookId
+      createdAt
+      currentBorrowerId
+      dueDate
+      id
+      isOverdue
+      loanRequestId
+      originalBookId
+      originalOwnerId
+      overdueNotificationsSent
+      startDate
+      updatedAt
+      __typename
+    }
     approvedDuration
     bookId
     chat {
@@ -289,7 +320,6 @@ export const listActiveLoans = /* GraphQL */ `query ListActiveLoans(
       originalBookId
       originalOwnerId
       overdueNotificationsSent
-      owner
       startDate
       updatedAt
       __typename

@@ -27,6 +27,7 @@ const LoanHandoffPage: React.FC = () => {
     const { markRead } = useNotifications();
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [safetyGuidelinesExpanded, setSafetyGuidelinesExpanded] = useState(false);
+    const [realtimeHandoff, setRealtimeHandoff] = useState<any>(null);
 
     // Get current user
     useEffect(() => {
@@ -119,13 +120,68 @@ const LoanHandoffPage: React.FC = () => {
         enabled: !!loanRequest?.requesterId
     });
 
+    // Real-time subscription for handoff updates
+    useEffect(() => {
+        if (!id || !currentUserId) return;
+
+        console.log('Setting up LoanHandoff subscription for:', id);
+        
+        const subscription = client.models.LoanHandoff.onUpdate({
+            filter: {
+                id: { eq: id }
+            }
+        }).subscribe({
+            next: (updatedHandoff) => {
+                console.log('LoanHandoff updated via subscription:', updatedHandoff);
+                setRealtimeHandoff(updatedHandoff);
+                
+                // Check if both parties are now confirmed
+                if (updatedHandoff.lenderConfirmed && updatedHandoff.borrowerConfirmed && !updatedHandoff.completedAt) {
+                    console.log('Both parties confirmed - creating active loan');
+                    
+                    // Trigger active loan creation automatically
+                    client.mutations.createActiveLoanMutation({
+                        loanHandoffId: updatedHandoff.id
+                    }).then((result) => {
+                        if (result.data?.success) {
+                            console.log('Active loan created successfully via subscription:', result.data.activeLoanId);
+                            alert('Handoff completed! The loan is now active.');
+                            navigate('/inbox');
+                        } else {
+                            console.error('Failed to create active loan via subscription:', result.data?.error);
+                            // Still show success to user since the handoff was completed
+                            alert('Handoff completed! The loan is now active.');
+                            navigate('/inbox');
+                        }
+                    }).catch((error) => {
+                        console.error('Error creating active loan via subscription:', error);
+                        // Still show success to user since the handoff was completed
+                        alert('Handoff completed! The loan is now active.');
+                        navigate('/inbox');
+                    });
+                }
+            },
+            error: (error) => {
+                console.warn('LoanHandoff subscription error:', error);
+            }
+        });
+
+        return () => {
+            console.log('Cleaning up LoanHandoff subscription');
+            subscription.unsubscribe();
+        };
+    }, [id, currentUserId, navigate]);
+
+    // Use real-time data if available, otherwise fall back to query data
+    const currentHandoff = realtimeHandoff || handoff;
+
     // Determine user roles
     const isLender = currentUserId === loanRequest?.lenderId;
     const isBorrower = currentUserId === loanRequest?.requesterId;
-    const isCompleted = handoff?.lenderConfirmed && handoff?.borrowerConfirmed;
+    const isCompleted = currentHandoff?.lenderConfirmed && currentHandoff?.borrowerConfirmed;
 
 
-    // Confirm handoff mutation
+    // Confirm handoff mutation (simplified - subscription handles active loan creation)
     const confirmHandoffMutation = useMutation({
         mutationFn: async () => {
             if (!handoff || !currentUserId) throw new Error('Missing data');
@@ -149,36 +205,29 @@ const LoanHandoffPage: React.FC = () => {
                 updateData.borrowerConfirmedAt = new Date().toISOString();
             }
             
-            // Calculate if both parties will be confirmed after this update
+            // Set completedAt if this is the second confirmation
             const willLenderBeConfirmed = isLender ? true : handoff.lenderConfirmed;
             const willBorrowerBeConfirmed = isBorrower ? true : handoff.borrowerConfirmed;
             const bothConfirmed = willLenderBeConfirmed && willBorrowerBeConfirmed;
             
             if (bothConfirmed) {
+                console.log("Inside bothConfirmed ", bothConfirmed);
                 updateData.completedAt = new Date().toISOString();
-                
-                // Update loan request to completed status
-                if (loanRequest) {
-                    await client.models.LoanRequest.update({
-                        id: loanRequest.id,
-                        status: 'completed'
-                    });
-                }
             }
             
-            const result = await client.models.LoanHandoff.update(updateData);
+            // Update the handoff record - subscription will handle active loan creation
+            await client.models.LoanHandoff.update(updateData);
             
-            // Return both the result and completion status
-            return { result, isNowCompleted: bothConfirmed };
+            return { bothConfirmed };
         },
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['loanHandoff', id] });
-            if (data.isNowCompleted) {
-                alert('Handoff completed! The loan is now active.');
-                navigate('/inbox');
-            } else {
+            queryClient.invalidateQueries({ queryKey: ['loanRequest'] });
+            
+            if (!data.bothConfirmed) {
                 alert('Handoff confirmed! Waiting for the other party to confirm.');
             }
+            // If both confirmed, the subscription will handle the success message and navigation
         }
     });
 
@@ -297,13 +346,13 @@ const LoanHandoffPage: React.FC = () => {
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    {handoff.lenderConfirmed ? (
+                                    {currentHandoff.lenderConfirmed ? (
                                         <CheckCircle2 className="w-5 h-5 text-green-600" />
                                     ) : (
                                         <AlertCircle className="w-5 h-5 text-yellow-600" />
                                     )}
                                     <span className="text-sm">
-                                        {handoff.lenderConfirmed ? 'Confirmed' : 'Pending'}
+                                        {currentHandoff.lenderConfirmed ? 'Confirmed' : 'Pending'}
                                     </span>
                                 </div>
                             </div>
@@ -316,13 +365,13 @@ const LoanHandoffPage: React.FC = () => {
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    {handoff.borrowerConfirmed ? (
+                                    {currentHandoff.borrowerConfirmed ? (
                                         <CheckCircle2 className="w-5 h-5 text-green-600" />
                                     ) : (
                                         <AlertCircle className="w-5 h-5 text-yellow-600" />
                                     )}
                                     <span className="text-sm">
-                                        {handoff.borrowerConfirmed ? 'Confirmed' : 'Pending'}
+                                        {currentHandoff.borrowerConfirmed ? 'Confirmed' : 'Pending'}
                                     </span>
                                 </div>
                             </div>
@@ -347,12 +396,12 @@ const LoanHandoffPage: React.FC = () => {
                                     <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-2" />
                                     <p className="text-green-600 font-medium">Handoff completed!</p>
                                     <p className="text-sm text-gray-600">
-                                        Completed on {handoff.completedAt && new Date(handoff.completedAt).toLocaleDateString()}
+                                        Completed on {currentHandoff.completedAt && new Date(currentHandoff.completedAt).toLocaleDateString()}
                                     </p>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    {((isLender && !handoff.lenderConfirmed) || (isBorrower && !handoff.borrowerConfirmed)) && (
+                                    {((isLender && !currentHandoff.lenderConfirmed) || (isBorrower && !currentHandoff.borrowerConfirmed)) && (
                                         <Button 
                                             onClick={handleConfirmHandoff}
                                             disabled={confirmHandoffMutation.isPending}
@@ -372,7 +421,7 @@ const LoanHandoffPage: React.FC = () => {
                                         </Button>
                                     )}
                                     
-                                    {((isLender && handoff.lenderConfirmed) || (isBorrower && handoff.borrowerConfirmed)) && (
+                                    {((isLender && currentHandoff.lenderConfirmed) || (isBorrower && currentHandoff.borrowerConfirmed)) && (
                                         <div className="text-center py-4">
                                             <CheckCircle2 className="w-8 h-8 text-green-600 mx-auto mb-2" />
                                             <p className="text-green-600 font-medium">You have confirmed</p>

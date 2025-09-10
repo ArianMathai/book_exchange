@@ -9,21 +9,42 @@ type GeneratedSubscription<InputType, OutputType> = string & {
 };
 
 export const onCreateActiveLoan = /* GraphQL */ `subscription OnCreateActiveLoan(
+  $currentBorrowerId: String
   $filter: ModelSubscriptionActiveLoanFilterInput
-  $owner: String
+  $originalOwnerId: String
 ) {
-  onCreateActiveLoan(filter: $filter, owner: $owner) {
+  onCreateActiveLoan(
+    currentBorrowerId: $currentBorrowerId
+    filter: $filter
+    originalOwnerId: $originalOwnerId
+  ) {
     borrowedBookId
     createdAt
     currentBorrowerId
     dueDate
     id
     isOverdue
+    loanRequest {
+      approvedDuration
+      bookId
+      completedAt
+      createdAt
+      dueDate
+      id
+      lenderId
+      message
+      proposedDuration
+      requestedAt
+      requesterId
+      respondedAt
+      status
+      updatedAt
+      __typename
+    }
     loanRequestId
     originalBookId
     originalOwnerId
     overdueNotificationsSent
-    owner
     startDate
     updatedAt
     __typename
@@ -158,6 +179,21 @@ export const onCreateLoanRequest = /* GraphQL */ `subscription OnCreateLoanReque
     lenderId: $lenderId
     requesterId: $requesterId
   ) {
+    activeLoan {
+      borrowedBookId
+      createdAt
+      currentBorrowerId
+      dueDate
+      id
+      isOverdue
+      loanRequestId
+      originalBookId
+      originalOwnerId
+      overdueNotificationsSent
+      startDate
+      updatedAt
+      __typename
+    }
     approvedDuration
     bookId
     chat {
@@ -311,21 +347,42 @@ export const onCreateUser = /* GraphQL */ `subscription OnCreateUser(
   APITypes.OnCreateUserSubscription
 >;
 export const onDeleteActiveLoan = /* GraphQL */ `subscription OnDeleteActiveLoan(
+  $currentBorrowerId: String
   $filter: ModelSubscriptionActiveLoanFilterInput
-  $owner: String
+  $originalOwnerId: String
 ) {
-  onDeleteActiveLoan(filter: $filter, owner: $owner) {
+  onDeleteActiveLoan(
+    currentBorrowerId: $currentBorrowerId
+    filter: $filter
+    originalOwnerId: $originalOwnerId
+  ) {
     borrowedBookId
     createdAt
     currentBorrowerId
     dueDate
     id
     isOverdue
+    loanRequest {
+      approvedDuration
+      bookId
+      completedAt
+      createdAt
+      dueDate
+      id
+      lenderId
+      message
+      proposedDuration
+      requestedAt
+      requesterId
+      respondedAt
+      status
+      updatedAt
+      __typename
+    }
     loanRequestId
     originalBookId
     originalOwnerId
     overdueNotificationsSent
-    owner
     startDate
     updatedAt
     __typename
@@ -460,6 +517,21 @@ export const onDeleteLoanRequest = /* GraphQL */ `subscription OnDeleteLoanReque
     lenderId: $lenderId
     requesterId: $requesterId
   ) {
+    activeLoan {
+      borrowedBookId
+      createdAt
+      currentBorrowerId
+      dueDate
+      id
+      isOverdue
+      loanRequestId
+      originalBookId
+      originalOwnerId
+      overdueNotificationsSent
+      startDate
+      updatedAt
+      __typename
+    }
     approvedDuration
     bookId
     chat {
@@ -613,21 +685,42 @@ export const onDeleteUser = /* GraphQL */ `subscription OnDeleteUser(
   APITypes.OnDeleteUserSubscription
 >;
 export const onUpdateActiveLoan = /* GraphQL */ `subscription OnUpdateActiveLoan(
+  $currentBorrowerId: String
   $filter: ModelSubscriptionActiveLoanFilterInput
-  $owner: String
+  $originalOwnerId: String
 ) {
-  onUpdateActiveLoan(filter: $filter, owner: $owner) {
+  onUpdateActiveLoan(
+    currentBorrowerId: $currentBorrowerId
+    filter: $filter
+    originalOwnerId: $originalOwnerId
+  ) {
     borrowedBookId
     createdAt
     currentBorrowerId
     dueDate
     id
     isOverdue
+    loanRequest {
+      approvedDuration
+      bookId
+      completedAt
+      createdAt
+      dueDate
+      id
+      lenderId
+      message
+      proposedDuration
+      requestedAt
+      requesterId
+      respondedAt
+      status
+      updatedAt
+      __typename
+    }
     loanRequestId
     originalBookId
     originalOwnerId
     overdueNotificationsSent
-    owner
     startDate
     updatedAt
     __typename
@@ -762,6 +855,21 @@ export const onUpdateLoanRequest = /* GraphQL */ `subscription OnUpdateLoanReque
     lenderId: $lenderId
     requesterId: $requesterId
   ) {
+    activeLoan {
+      borrowedBookId
+      createdAt
+      currentBorrowerId
+      dueDate
+      id
+      isOverdue
+      loanRequestId
+      originalBookId
+      originalOwnerId
+      overdueNotificationsSent
+      startDate
+      updatedAt
+      __typename
+    }
     approvedDuration
     bookId
     chat {
