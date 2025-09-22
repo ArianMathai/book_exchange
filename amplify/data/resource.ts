@@ -113,6 +113,7 @@ const schema = a.schema({
         lenderConfirmedAt: a.datetime(),
         borrowerConfirmedAt: a.datetime(),
         completedAt: a.datetime(), // When both confirmed
+        processedByStream: a.boolean().default(false), // Tracks if stream processing already handled completion
     }).authorization(allow => [
         allow.ownerDefinedIn("requesterId").to(['read', "update"]),
         allow.ownerDefinedIn("lenderId").to(['read', "update", "create"]),
@@ -154,7 +155,7 @@ const schema = a.schema({
     // Optional: Notifications system
     Notification: a.model({
         userId: a.string().required(), // Receiver of notification
-        type: a.enum(['loan_request', 'loan_approved', 'loan_rejected', 'handoff_ready', 'book_overdue', 'book_returned']),
+        type: a.enum(['loan_request', 'loan_approved', 'loan_rejected', 'handoff_ready', 'book_overdue', 'book_returned', 'loan_creation_failed']),
         title: a.string().required(),
         message: a.string().required(),
         isRead: a.boolean().default(false),
@@ -293,21 +294,6 @@ const schema = a.schema({
         .handler(a.handler.function(approveLoanRequest))
         .authorization((allow) => [allow.authenticated()]),
 
-    // SECURITY: Secure active loan creation mutation
-    // This creates ActiveLoan and updates all related records when handoff is completed
-    createActiveLoanMutation: a
-        .mutation()
-        .arguments({
-            loanHandoffId: a.string().required(),
-        })
-        .returns(a.customType({
-            success: a.boolean().required(),
-            activeLoanId: a.string(),
-            message: a.string().required(),
-            error: a.string(),
-        }))
-        .handler(a.handler.function(createActiveLoan))
-        .authorization((allow) => [allow.authenticated()]),
 
 }).authorization((allow) => [
     // Grant Lambda function access to the entire API for approving loanRequests

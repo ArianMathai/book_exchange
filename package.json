@@ -41,8 +41,10 @@
   "devDependencies": {
     "@aws-amplify/backend": "^1.5.0",
     "@aws-amplify/backend-cli": "^1.2.9",
+    "@aws-lambda-powertools/logger": "^2.26.1",
     "@dotenvx/dotenvx": "^1.48.4",
     "@tailwindcss/postcss": "^4.1.7",
+    "@types/aws-lambda": "^8.10.152",
     "@types/google.maps": "^3.58.1",
     "@types/node": "^22.15.21",
     "@types/react": "^18.2.66",

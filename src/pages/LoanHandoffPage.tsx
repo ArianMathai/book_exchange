@@ -34,7 +34,9 @@ const LoanHandoffPage: React.FC = () => {
     useEffect(() => {
         getCurrentUser().then(user => {
             setCurrentUserId(user.userId);
-        }).catch(console.error);
+        }).catch((error) => {
+            console.error('Failed to get current user:', error);
+        });
     }, []);
 
     // Fetch handoff data
@@ -141,65 +143,48 @@ const LoanHandoffPage: React.FC = () => {
             next: (updatedHandoff) => {
                 setRealtimeHandoff(updatedHandoff);
 
-                // Check if both parties are now confirmed AND current user is the lender
-                if (updatedHandoff.lenderConfirmed && updatedHandoff.borrowerConfirmed && !updatedHandoff.completedAt && isLender) {
-
-                    // Only lender triggers active loan creation automatically
-                    client.mutations.createActiveLoanMutation({
-                        loanHandoffId: updatedHandoff.id
-                    }).then((result) => {
-                        if (result.data?.success) {
-                            toast.success("🎉 Handoff Complete!", {
-                                description: "The loan is now active and ready to use."
-                            });
-                            navigate('/inbox');
-                        } else {
-                            console.error('Failed to create active loan via subscription:', result.data?.error);
-                            // Still show success to user since the handoff was completed
-                            toast.success("🎉 Handoff Complete!", {
-                                description: "The loan is now active and ready to use."
-                            });
-                            navigate('/inbox');
-                        }
-                    }).catch((error) => {
-                        console.error('Error creating active loan via subscription:', error);
-                        // Still show success to user since the handoff was completed
-                        toast.success("🎉 Handoff Complete!", {
-                            description: "The loan is now active and ready to use."
-                        });
-                        navigate('/inbox');
+                // Check if both parties are now confirmed
+                if (updatedHandoff.lenderConfirmed && updatedHandoff.borrowerConfirmed && !updatedHandoff.completedAt) {
+                    // Show completion success message
+                    // Active loan creation now happens automatically via server-side trigger
+                    toast.success("🎉 Handoff Complete!", {
+                        description: "The loan will be activated automatically. You'll receive a notification when it's ready."
                     });
+                    navigate('/inbox');
                 }
             },
             error: (error) => {
+                // Subscription errors are expected during navigation
+                if (error.message?.includes('NetworkError') || error.message?.includes('cancelled')) {
+                    return; // Ignore network/cancellation errors
+                }
                 console.warn('LoanHandoff subscription error:', error);
             }
         });
 
         return () => {
-            console.log('Cleaning up LoanHandoff subscription');
             subscription.unsubscribe();
         };
-    }, [id, currentUserId, navigate, isLender]);
+    }, [id, currentUserId, navigate]);
     const isCompleted = currentHandoff?.lenderConfirmed && currentHandoff?.borrowerConfirmed;
 
 
-    // Confirm handoff mutation (simplified - subscription handles active loan creation)
+    // Confirm handoff mutation (simplified - backend handles completion detection)
     const confirmHandoffMutation = useMutation({
         mutationFn: async () => {
             if (!handoff || !currentUserId) throw new Error('Missing data');
-            
-            const updateData: { 
-                id: string; 
-                lenderConfirmed?: boolean; 
+
+            // Simple confirmation - just set own confirmation field
+            const updateData: {
+                id: string;
+                lenderConfirmed?: boolean;
                 lenderConfirmedAt?: string;
                 borrowerConfirmed?: boolean;
                 borrowerConfirmedAt?: string;
-                completedAt?: string;
             } = {
                 id: handoff.id
             };
-            
+
             if (isLender) {
                 updateData.lenderConfirmed = true;
                 updateData.lenderConfirmedAt = new Date().toISOString();
@@ -207,32 +192,20 @@ const LoanHandoffPage: React.FC = () => {
                 updateData.borrowerConfirmed = true;
                 updateData.borrowerConfirmedAt = new Date().toISOString();
             }
-            
-            // Set completedAt if this is the second confirmation
-            const willLenderBeConfirmed = isLender ? true : handoff.lenderConfirmed;
-            const willBorrowerBeConfirmed = isBorrower ? true : handoff.borrowerConfirmed;
-            const bothConfirmed = willLenderBeConfirmed && willBorrowerBeConfirmed;
-            
-            if (bothConfirmed) {
-                console.log("Inside bothConfirmed ", bothConfirmed);
-                updateData.completedAt = new Date().toISOString();
-            }
-            
-            // Update the handoff record - subscription will handle active loan creation
+
+            // Backend will detect when both parties confirmed and set completedAt automatically
             await client.models.LoanHandoff.update(updateData);
-            
-            return { bothConfirmed };
+
+            return {};
         },
-        onSuccess: (data) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['loanHandoff', id] });
             queryClient.invalidateQueries({ queryKey: ['loanRequest'] });
-            
-            if (!data.bothConfirmed) {
-                toast.success("Confirmation Received", {
-                    description: "Waiting for the other party to confirm."
-                });
-            }
-            // If both confirmed, the subscription will handle the success message and navigation
+
+            toast.success("Confirmation Received", {
+                description: "Thank you for confirming. The system will automatically process the handoff when both parties confirm."
+            });
+            // Backend will handle completion detection and active loan creation automatically
         }
     });
 
