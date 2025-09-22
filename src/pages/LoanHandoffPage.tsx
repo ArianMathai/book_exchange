@@ -121,6 +121,13 @@ const LoanHandoffPage: React.FC = () => {
         enabled: !!loanRequest?.requesterId
     });
 
+    // Use real-time data if available, otherwise fall back to query data
+    const currentHandoff = realtimeHandoff || handoff;
+
+    // Determine user roles
+    const isLender = currentUserId === loanRequest?.lenderId;
+    const isBorrower = currentUserId === loanRequest?.requesterId;
+
     // Real-time subscription for handoff updates
     useEffect(() => {
         if (!id || !currentUserId) return;
@@ -133,11 +140,11 @@ const LoanHandoffPage: React.FC = () => {
         }).subscribe({
             next: (updatedHandoff) => {
                 setRealtimeHandoff(updatedHandoff);
-                
-                // Check if both parties are now confirmed
-                if (updatedHandoff.lenderConfirmed && updatedHandoff.borrowerConfirmed && !updatedHandoff.completedAt) {
 
-                    // Trigger active loan creation automatically
+                // Check if both parties are now confirmed AND current user is the lender
+                if (updatedHandoff.lenderConfirmed && updatedHandoff.borrowerConfirmed && !updatedHandoff.completedAt && isLender) {
+
+                    // Only lender triggers active loan creation automatically
                     client.mutations.createActiveLoanMutation({
                         loanHandoffId: updatedHandoff.id
                     }).then((result) => {
@@ -173,14 +180,7 @@ const LoanHandoffPage: React.FC = () => {
             console.log('Cleaning up LoanHandoff subscription');
             subscription.unsubscribe();
         };
-    }, [id, currentUserId, navigate]);
-
-    // Use real-time data if available, otherwise fall back to query data
-    const currentHandoff = realtimeHandoff || handoff;
-
-    // Determine user roles
-    const isLender = currentUserId === loanRequest?.lenderId;
-    const isBorrower = currentUserId === loanRequest?.requesterId;
+    }, [id, currentUserId, navigate, isLender]);
     const isCompleted = currentHandoff?.lenderConfirmed && currentHandoff?.borrowerConfirmed;
 
 

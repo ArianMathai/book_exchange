@@ -159,6 +159,40 @@ export const handler: AppSyncResolverHandler<CreateActiveLoanArgs, CreateActiveL
             };
         }
 
+        // STEP 6.1: Check if borrowed book copy already exists
+        const existingBorrowedBookResult = await client.models.Book.list({
+            filter: {
+                and: [
+                    { originalBookId: { eq: originalBook.id } },
+                    { ownerId: { eq: loanRequest.requesterId } },
+                    { isOriginalCopy: { eq: false } }
+                ]
+            }
+        });
+
+        if (existingBorrowedBookResult.data && existingBorrowedBookResult.data.length > 0) {
+            // Race condition: Another client already created the borrowed book copy
+            // Check if there's an associated ActiveLoan for this borrowed book
+            const borrowedBook = existingBorrowedBookResult.data[0];
+
+            // Try to find existing ActiveLoan by borrowed book ID
+            const existingActiveLoanByBookResult = await client.models.ActiveLoan.list({
+                filter: { borrowedBookId: { eq: borrowedBook.id } }
+            });
+
+            if (existingActiveLoanByBookResult.data && existingActiveLoanByBookResult.data.length > 0) {
+                console.log(`Borrowed book copy and active loan already exist for loan request ${loanRequest.id}`);
+                return {
+                    success: true,
+                    activeLoanId: existingActiveLoanByBookResult.data[0].id,
+                    message: 'Borrowed book copy and active loan already exist (created by concurrent request)'
+                };
+            }
+
+            // Borrowed book exists but no ActiveLoan - continue to create ActiveLoan with existing book
+            console.log(`Using existing borrowed book copy for loan request ${loanRequest.id}: ${borrowedBook.id}`);
+        }
+
         const currentTime = new Date();
 
         // STEP 7: Fetch borrower's public profile to get username
@@ -189,36 +223,48 @@ export const handler: AppSyncResolverHandler<CreateActiveLoanArgs, CreateActiveL
             };
         }
 
-        // STEP 8: Create borrowed book copy for the borrower
-        const borrowedBookResult = await client.models.Book.create({
-            title: originalBook.title,
-            author: originalBook.author,
-            isbn: originalBook.isbn,
-            ownerId: loanRequest.requesterId, // Borrower is now the "owner" of this copy
-            ownerEmail: borrowerProfile.email, // Use actual email from profile
-            userName: borrowerProfile.username, // Use actual username from profile
-            loanedOut: false, // This copy is not loaned out
-            loanedTo: null,
-            isOriginalCopy: false,
-            originalOwnerId: loanRequest.lenderId,
-            originalOwnerEmail: originalBook.ownerEmail,
-            originalOwnerUsername: originalOwnerProfile.username,
-            originalBookId: originalBook.id,
-            borrowStatus: 'active',
-            borrowedAt: currentTime.toISOString(),
-            dueDate: loanRequest.dueDate,
-            imageUrl: originalBook.imageUrl,
-            imageSource: originalBook.imageSource
-        });
+        // STEP 8: Create borrowed book copy for the borrower (or use existing one)
+        let borrowedBook;
 
-        if (!borrowedBookResult.data) {
-            throw new Error('Failed to create borrowed book copy');
+        if (existingBorrowedBookResult.data && existingBorrowedBookResult.data.length > 0) {
+            // Use existing borrowed book copy
+            borrowedBook = existingBorrowedBookResult.data[0];
+            console.log(`Using existing borrowed book copy: ${borrowedBook.id}`);
+        } else {
+            // Create new borrowed book copy
+            const borrowedBookResult = await client.models.Book.create({
+                title: originalBook.title,
+                author: originalBook.author,
+                isbn: originalBook.isbn,
+                ownerId: loanRequest.requesterId, // Borrower is now the "owner" of this copy
+                ownerEmail: borrowerProfile.email, // Use actual email from profile
+                userName: borrowerProfile.username, // Use actual username from profile
+                loanedOut: false, // This copy is not loaned out
+                loanedTo: null,
+                isOriginalCopy: false,
+                originalOwnerId: loanRequest.lenderId,
+                originalOwnerEmail: originalBook.ownerEmail,
+                originalOwnerUsername: originalOwnerProfile.username,
+                originalBookId: originalBook.id,
+                borrowStatus: 'active',
+                borrowedAt: currentTime.toISOString(),
+                dueDate: loanRequest.dueDate,
+                imageUrl: originalBook.imageUrl,
+                imageSource: originalBook.imageSource
+            });
+
+            if (!borrowedBookResult.data) {
+                throw new Error('Failed to create borrowed book copy');
+            }
+
+            borrowedBook = borrowedBookResult.data;
+            console.log(`Created new borrowed book copy: ${borrowedBook.id}`);
         }
 
         // STEP 9: Create ActiveLoan record
         const activeLoanResult = await client.models.ActiveLoan.create({
             originalBookId: originalBook.id,
-            borrowedBookId: borrowedBookResult.data.id,
+            borrowedBookId: borrowedBook.id,
             originalOwnerId: loanRequest.lenderId,
             currentBorrowerId: loanRequest.requesterId,
             loanRequestId: loanRequest.id,
@@ -242,7 +288,7 @@ export const handler: AppSyncResolverHandler<CreateActiveLoanArgs, CreateActiveL
 
         // STEP 11: Update borrowed book copy with activeLoanId reference
         await client.models.Book.update({
-            id: borrowedBookResult.data.id,
+            id: borrowedBook.id,
             activeLoanId: activeLoanResult.data.id
         });
 
