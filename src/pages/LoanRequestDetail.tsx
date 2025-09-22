@@ -31,27 +31,10 @@ const LoanRequestDetail: React.FC = () => {
         queryKey: ['loanRequest', id],
         queryFn: async () => {
             if (!id) throw new Error('No loan request ID provided');
-            
+
             const result = await client.models.LoanRequest.get({ id });
             if (!result.data) throw new Error('Loan request not found');
-            
-            // Mark related notification as read (only for current user)
-            if (currentUserId) {
-                const notifications = await client.models.Notification.list({
-                    filter: {
-                        loanRequestId: { eq: id },
-                        userId: { eq: currentUserId }
-                    }
-                });
-                
-                if (notifications.data && notifications.data.length > 0) {
-                    const notification = notifications.data[0];
-                    if (!notification.isRead) {
-                        await markRead(notification.id);
-                    }
-                }
-            }
-            
+
             return result.data;
         },
         enabled: !!id
@@ -98,15 +81,40 @@ const LoanRequestDetail: React.FC = () => {
         queryKey: ['currentUserProfile', currentUserId],
         queryFn: async () => {
             if (!currentUserId) throw new Error('No current user ID');
-            
+
             const result = await client.models.PublicProfile.list({
                 filter: { userId: { eq: currentUserId } }
             });
-            
+
             return result.data?.[0] || null;
         },
         enabled: !!currentUserId
     });
+
+    // Function to mark related notifications as read when user takes action
+    // Excludes handoff_ready notifications as they represent a new workflow phase
+    const markLoanNotificationsAsRead = async () => {
+        if (!currentUserId || !id) return;
+
+        try {
+            const notifications = await client.models.Notification.list({
+                filter: {
+                    loanRequestId: { eq: id },
+                    userId: { eq: currentUserId },
+                    isRead: { eq: false },
+                    type: { ne: 'handoff_ready' }  // Exclude handoff notifications - they should stay unread
+                }
+            });
+
+            if (notifications.data && notifications.data.length > 0) {
+                await Promise.all(
+                    notifications.data.map(notification => markRead(notification.id))
+                );
+            }
+        } catch (error) {
+            console.error('Failed to mark loan notifications as read:', error);
+        }
+    };
 
 
 
@@ -153,8 +161,12 @@ const LoanRequestDetail: React.FC = () => {
             console.log(`Loan approved successfully. ${chatId ? `Chat created: ${chatId}` : 'Chat creation skipped.'}`);
             return result.data;
         },
-        onSuccess: () => {
+        onSuccess: async () => {
             queryClient.invalidateQueries({ queryKey: ['loanRequest', id] });
+
+            // Mark related notifications as read since user took meaningful action
+            await markLoanNotificationsAsRead();
+
             toast.success("📚 Loan Approved!", {
                 description: "Both parties have been notified and a chat has been created to coordinate the book handoff."
             });
@@ -197,8 +209,12 @@ const LoanRequestDetail: React.FC = () => {
                 bookId: loanRequest.bookId
             });
         },
-        onSuccess: () => {
+        onSuccess: async () => {
             queryClient.invalidateQueries({ queryKey: ['loanRequest', id] });
+
+            // Mark related notifications as read since user took meaningful action
+            await markLoanNotificationsAsRead();
+
             toast.success("Request Declined", {
                 description: "The borrower has been notified of your decision."
             });

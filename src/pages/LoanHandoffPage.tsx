@@ -44,23 +44,10 @@ const LoanHandoffPage: React.FC = () => {
         queryKey: ['loanHandoff', id],
         queryFn: async () => {
             if (!id) throw new Error('No handoff ID provided');
-            
+
             const result = await client.models.LoanHandoff.get({ id });
             if (!result.data) throw new Error('Handoff not found');
-            
-            // Mark related notifications as read
-            const notifications = await client.models.Notification.list({
-                filter: { handoffId: { eq: id } }
-            });
-            
-            if (notifications.data && notifications.data.length > 0) {
-                await Promise.all(
-                    notifications.data
-                        .filter(n => !n.isRead && n.userId === currentUserId)
-                        .map(n => markRead(n.id))
-                );
-            }
-            
+
             return result.data;
         },
         enabled: !!id && !!currentUserId
@@ -130,6 +117,29 @@ const LoanHandoffPage: React.FC = () => {
     const isLender = currentUserId === loanRequest?.lenderId;
     const isBorrower = currentUserId === loanRequest?.requesterId;
 
+    // Function to mark related notifications as read when user takes action
+    const markHandoffNotificationsAsRead = async () => {
+        if (!currentUserId || !id) return;
+
+        try {
+            const notifications = await client.models.Notification.list({
+                filter: {
+                    handoffId: { eq: id },
+                    userId: { eq: currentUserId },
+                    isRead: { eq: false }
+                }
+            });
+
+            if (notifications.data && notifications.data.length > 0) {
+                await Promise.all(
+                    notifications.data.map(notification => markRead(notification.id))
+                );
+            }
+        } catch (error) {
+            console.error('Failed to mark handoff notifications as read:', error);
+        }
+    };
+
     // Real-time subscription for handoff updates
     useEffect(() => {
         if (!id || !currentUserId) return;
@@ -198,9 +208,12 @@ const LoanHandoffPage: React.FC = () => {
 
             return {};
         },
-        onSuccess: () => {
+        onSuccess: async () => {
             queryClient.invalidateQueries({ queryKey: ['loanHandoff', id] });
             queryClient.invalidateQueries({ queryKey: ['loanRequest'] });
+
+            // Mark related notifications as read since user took meaningful action
+            await markHandoffNotificationsAsRead();
 
             toast.success("Confirmation Received", {
                 description: "Thank you for confirming. The system will automatically process the handoff when both parties confirm."
