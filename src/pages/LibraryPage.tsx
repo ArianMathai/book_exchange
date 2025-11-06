@@ -15,6 +15,7 @@ import {
 import BookCard from "@/components/book/BookCard.tsx";
 import {BookType} from "@/components/book/bookTypes.ts";
 import {client} from "@/lib/amplifyClient.ts";
+import {fetchUserAttributes} from "aws-amplify/auth";
 
 
 // Main LibraryPage Page Component
@@ -31,9 +32,32 @@ const LibraryPage: React.FC = () => {
         setError(null);
 
         try {
-            console.log('📚 Calling Book.list()...');
+            const attrs = await fetchUserAttributes();
+            const currentUserSub = attrs.sub;
+
+            // Filter books by current user's sub (ownerId)
             const result = await client.models.Book.list({
-                selectionSet: ['id','title', 'author', 'isbn', 'ownerEmail', 'createdAt', 'loanedOut', 'loanedTo']
+                filter: {
+                    ownerId: { eq: currentUserSub }
+                },
+                selectionSet: [
+                    'id',
+                    'title',
+                    'author',
+                    'isbn',
+                    'ownerEmail',
+                    'createdAt',
+                    'loanedOut',
+                    'loanedTo',
+                    'loanedToUsername',
+                    'imageSource',
+                    'imageUrl',
+                    'isOriginalCopy',
+                    'originalOwnerId',
+                    'originalOwnerEmail',
+                    'originalOwnerUsername',
+                    'borrowStatus'
+                ]
             });
 
             if (result.errors && result.errors.length > 0) {
@@ -42,8 +66,30 @@ const LibraryPage: React.FC = () => {
                 return;
             }
 
-            const fetchedBooks = result.data ?? [];
-            setBooks(fetchedBooks);
+            const rawBooks = result.data ?? [];
+            const transformedBooks: BookType[] = rawBooks.map(book => ({
+                id: book.id,
+                title: book.title,
+                author: book.author,
+                isbn: book.isbn,
+                ownerEmail: book.ownerEmail,
+                createdAt: book.createdAt,
+                loanedOut: book.loanedOut,
+                loanedTo: book.loanedTo,
+                loanedToUsername: book.loanedToUsername,
+                imageUrl: book.imageUrl,
+                imageSource: book.imageSource === 'manual' || book.imageSource === 'google_books'
+                    ? book.imageSource
+                    : null, // Normalize to 'manual', 'google_books', or null
+                isOriginalCopy: book.isOriginalCopy,
+                originalOwnerId: book.originalOwnerId,
+                originalOwnerEmail: book.originalOwnerEmail,
+                originalOwnerUsername: book.originalOwnerUsername,
+                borrowStatus: book.borrowStatus
+            }));
+            console.log('Transformed books:', transformedBooks);
+            setBooks(transformedBooks);
+
 
         } catch (error) {
             console.error('💥 Error fetching books:', error);
@@ -87,7 +133,7 @@ const LibraryPage: React.FC = () => {
                             Filter
                         </Button>
                         <Button asChild className="bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-xl transition-all duration-200">
-                            <Link to="/add-book" className="flex items-center">
+                            <Link to="/app/add-book" className="flex items-center">
                                 <Plus className="w-4 h-4 mr-2" />
                                 Add Book
                             </Link>
@@ -96,44 +142,44 @@ const LibraryPage: React.FC = () => {
                 </div>
 
                 {/* Statistics Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8">
                     <Card className="bg-white border-slate-200">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-600">Total Books</p>
-                                    <p className="text-2xl font-bold text-slate-900">{books.length}</p>
+                        <CardContent className="p-3 sm:p-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                <div className="mb-2 sm:mb-0">
+                                    <p className="text-xs sm:text-sm font-medium text-slate-600">Total Books</p>
+                                    <p className="text-lg sm:text-2xl font-bold text-slate-900">{books.length}</p>
                                 </div>
-                                <div className="p-3 bg-blue-100 rounded-lg">
-                                    <Book className="w-6 h-6 text-blue-600" />
+                                <div className="p-2 sm:p-3 bg-blue-100 rounded-lg self-center sm:self-auto">
+                                    <Book className="w-4 sm:w-6 h-4 sm:h-6 text-blue-600" />
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card className="bg-white border-slate-200">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-600">Available</p>
-                                    <p className="text-2xl font-bold text-green-600">{availableBooks.length}</p>
+                        <CardContent className="p-3 sm:p-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                <div className="mb-2 sm:mb-0">
+                                    <p className="text-xs sm:text-sm font-medium text-slate-600">Available</p>
+                                    <p className="text-lg sm:text-2xl font-bold text-green-600">{availableBooks.length}</p>
                                 </div>
-                                <div className="p-3 bg-green-100 rounded-lg">
-                                    <CheckCircle className="w-6 h-6 text-green-600" />
+                                <div className="p-2 sm:p-3 bg-green-100 rounded-lg self-center sm:self-auto">
+                                    <CheckCircle className="w-4 sm:w-6 h-4 sm:h-6 text-green-600" />
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card className="bg-white border-slate-200">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-600">Loaned Out</p>
-                                    <p className="text-2xl font-bold text-red-600">{loanedBooks.length}</p>
+                        <CardContent className="p-3 sm:p-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                <div className="mb-2 sm:mb-0">
+                                    <p className="text-xs sm:text-sm font-medium text-slate-600">Loaned Out</p>
+                                    <p className="text-lg sm:text-2xl font-bold text-red-600">{loanedBooks.length}</p>
                                 </div>
-                                <div className="p-3 bg-red-100 rounded-lg">
-                                    <AlertCircle className="w-6 h-6 text-red-600" />
+                                <div className="p-2 sm:p-3 bg-red-100 rounded-lg self-center sm:self-auto">
+                                    <AlertCircle className="w-4 sm:w-6 h-4 sm:h-6 text-red-600" />
                                 </div>
                             </div>
                         </CardContent>
@@ -152,7 +198,7 @@ const LibraryPage: React.FC = () => {
                                     {availableBooks.length}
                                 </Badge>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {availableBooks.map((book) => (
                                     <BookCard key={book.id} book={book} />
                                 ))}
@@ -185,7 +231,7 @@ const LibraryPage: React.FC = () => {
                             <h3 className="text-lg font-medium text-slate-900 mb-2">No books in your library</h3>
                             <p className="text-slate-600 mb-6">Get started by adding your first book to the collection.</p>
                             <Button asChild className="bg-red-600 hover:bg-red-700">
-                                <Link to="/add-book">
+                                <Link to="/app/add-book">
                                     <Plus className="w-4 h-4 mr-2" />
                                     Add Your First Book
                                 </Link>

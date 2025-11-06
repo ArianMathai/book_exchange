@@ -27,3 +27,10 @@ dist-ssr
 .amplify
 amplify_outputs*
 amplifyconfiguration*
+
+
+#env
+.env.sandbox
+.env.local
+.env
+.env.temp

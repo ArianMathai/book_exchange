@@ -1,0 +1,108 @@
+# More information about the configuration file can be found here:
+# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-config.html
+version = 0.1
+
+# Sandbox environment (for Amplify sandbox development)
+[sandbox.global.parameters]
+stack_name = "add-book-sandbox"
+
+[sandbox.build.parameters]
+cached = true
+parallel = true
+
+[sandbox.validate.parameters]
+lint = true
+
+[sandbox.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+s3_prefix = "add-book-sandbox"
+region = "eu-north-1"
+parameter_overrides = [
+    "Environment=sandbox"
+    # CognitoUserPoolId will be provided by deploy script or manually
+]
+image_repositories = []
+
+[sandbox.package.parameters]
+resolve_s3 = true
+
+[sandbox.sync.parameters]
+watch = true
+
+[sandbox.local_start_api.parameters]
+warm_containers = "EAGER"
+
+[sandbox.local_start_lambda.parameters]
+warm_containers = "EAGER"
+
+# Development environment
+[dev.global.parameters]
+stack_name = "add-book-dev"
+
+[dev.build.parameters]
+cached = true
+parallel = true
+
+[dev.validate.parameters]
+lint = true
+
+[dev.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+s3_prefix = "add-book-dev"
+region = "eu-north-1"
+parameter_overrides = [
+    "Environment=dev",
+    "CognitoUserPoolId=\"eu-north-1_Cpr2QkIBI\""
+]
+image_repositories = []
+
+[dev.package.parameters]
+resolve_s3 = true
+
+[dev.sync.parameters]
+watch = true
+
+[dev.local_start_api.parameters]
+warm_containers = "EAGER"
+
+[dev.local_start_lambda.parameters]
+warm_containers = "EAGER"
+
+# Production environment
+[prod.global.parameters]
+stack_name = "add-book-prod"
+
+[prod.build.parameters]
+cached = true
+parallel = true
+
+[prod.validate.parameters]
+lint = true
+
+[prod.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false  # No confirmation needed for prod (optional)
+resolve_s3 = true
+s3_prefix = "add-book-prod"
+region = "eu-north-1"
+parameter_overrides = [
+    "Environment=prod",
+    "CognitoUserPoolId=\"eu-north-1_ncYQOqnAD\""
+]
+image_repositories = []
+
+[prod.package.parameters]
+resolve_s3 = true
+
+[prod.sync.parameters]
+watch = true
+
+[prod.local_start_api.parameters]
+warm_containers = "EAGER"
+
+[prod.local_start_lambda.parameters]
+warm_containers = "EAGER"

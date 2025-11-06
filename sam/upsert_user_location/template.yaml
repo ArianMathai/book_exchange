@@ -1,0 +1,157 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'Unified upsert_user_location template for all environments'
+
+# Global settings for all functions
+Globals:
+  Function:
+    Timeout: 10
+    LoggingConfig:
+      LogFormat: JSON
+
+# Parameters for environment configuration
+Parameters:
+  Environment:
+    Type: String
+    Default: sandbox
+    AllowedValues: [sandbox, dev, prod]
+    Description: The deployment environment
+
+  CognitoUserPoolId:
+    Type: String
+    Description: The ID of the Cognito User Pool for this environment
+    # No default - must be provided via parameter overrides
+
+# Conditions for environment-specific logic
+Conditions:
+  IsSandbox: !Equals [!Ref Environment, sandbox]
+  IsDev: !Equals [!Ref Environment, dev]
+  IsProd: !Equals [!Ref Environment, prod]
+
+Resources:
+  # API Gateway with environment-aware stage name
+  UpsertUserLocationApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !If
+        - IsProd
+        - Prod
+        - !If
+          - IsDev
+          - Dev
+          - Sandbox
+      Cors:
+        AllowMethods: "'POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: !If
+          - IsProd
+          - "'https://main.d2nd4m61c5fnyt.amplifyapp.com'"  # Replace with your actual production domain
+          - "'*'"  # Allow all origins for dev/sandbox
+        MaxAge: "'600'"
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}"
+
+  UpsertUserLocationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      # Use the same code directory - no need for separate folders
+      CodeUri: upsert_user_location/
+      Handler: app.lambdaHandler
+      Runtime: nodejs22.x
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          # Prod uses NeonDatabaseUrlProd, dev/sandbox use NeonDatabaseUrlDev
+          SECRET_NAME: !If
+            - IsProd
+            - "NeonDatabaseUrlProd"
+            - "NeonDatabaseUrlDev"
+          REGION: "eu-north-1"
+          ENVIRONMENT: !Ref Environment
+      Events:
+        # POST request with authentication
+        UpsertUserLocation:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UpsertUserLocationApi
+            Path: /user/location
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+        # OPTIONS request WITHOUT authentication for CORS preflight
+        UpsertUserLocationOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UpsertUserLocationApi
+            Path: /user/location
+            Method: options
+            Auth:
+              Authorizer: NONE
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource: !If
+                - IsProd
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:NeonDatabaseUrlProd-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:NeonDatabaseUrlDev-*"
+
+  # Gateway responses for proper CORS handling
+  UnauthorizedGatewayResponse:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      ResponseType: UNAUTHORIZED
+      RestApiId: !Ref UpsertUserLocationApi
+      StatusCode: 401
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: !If
+          - IsProd
+          - "'https://main.d2nd4m61c5fnyt.amplifyapp.com'"
+          - "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+
+  Default4xxGatewayResponse:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      ResponseType: DEFAULT_4XX
+      RestApiId: !Ref UpsertUserLocationApi
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: !If
+          - IsProd
+          - "'https://main.d2nd4m61c5fnyt.amplifyapp.com'"
+          - "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+
+  Default5xxGatewayResponse:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      RestApiId: !Ref UpsertUserLocationApi
+      ResponseType: DEFAULT_5XX
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: !If
+          - IsProd
+          - "'https://main.d2nd4m61c5fnyt.amplifyapp.com'"
+          - "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+
+Outputs:
+  UpsertUserLocationApi:
+    Description: !Sub "API Gateway endpoint URL for ${Environment} stage for Upsert User Location function"
+    Value: !Sub "https://${UpsertUserLocationApi}.execute-api.${AWS::Region}.amazonaws.com/${UpsertUserLocationApi.Stage}/user/location/"
+  UpsertUserLocationFunction:
+    Description: Upsert User Location Lambda Function ARN
+    Value: !GetAtt UpsertUserLocationFunction.Arn
+  UpsertUserLocationFunctionIamRole:
+    Description: Implicit IAM Role created for Upsert User Location function
+    Value: !GetAtt UpsertUserLocationFunctionRole.Arn
+  Environment:
+    Description: The deployed environment
+    Value: !Ref Environment
