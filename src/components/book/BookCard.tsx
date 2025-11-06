@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -88,6 +89,11 @@ const BookCard: React.FC<BookCardProps> = ({ book, className, distance }) => {
 
 
     return (
+        <Link
+            to={`/app/book/${book.id}`}
+            aria-label={`View details for ${book.title}`}
+            className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500 rounded-lg"
+        >
         <Card className={cn(
             "group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-slate-200 hover:border-red-200",
             className
@@ -141,7 +147,12 @@ const BookCard: React.FC<BookCardProps> = ({ book, className, distance }) => {
 
                             {/* Right: Availability Badge */}
                             <div className="flex-shrink-0">
-                                {book.loanedOut ? (
+                                {book.isOriginalCopy === false ? (
+                                    <Badge className="max-w-[120px] truncate text-ellipsis whitespace-nowrap bg-blue-100 text-blue-800 text-xs sm:text-sm">
+                                        <AlertCircle className="w-3.5 sm:w-4 h-3.5 sm:h-4 mr-0.5 sm:mr-1" />
+                                        On Loan
+                                    </Badge>
+                                ) : book.loanedOut ? (
                                     <Badge className="max-w-[120px] truncate text-ellipsis whitespace-nowrap bg-red-100 text-red-800 text-xs sm:text-sm">
                                         <AlertCircle className="w-3.5 sm:w-4 h-3.5 sm:h-4 mr-0.5 sm:mr-1" />
                                         Loaned Out
@@ -168,18 +179,18 @@ const BookCard: React.FC<BookCardProps> = ({ book, className, distance }) => {
                             <div className="flex items-center text-xs sm:text-sm text-slate-600">
                                 <Calendar className="w-3 sm:w-4 h-3 sm:h-4 mr-1 sm:mr-2 text-slate-400 flex-shrink-0" />
                                 <span className="truncate">
-                                Added {new Date(book.createdAt * 1000).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric',
-                                })}
+                                Added {new Intl.DateTimeFormat("en-US", {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                }).format(new Date(book.createdAt))}
                             </span>
                             </div>
 
                             {book.loanedOut && book.loanedTo && (
                                 <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-red-50 rounded-lg border border-red-100">
                                     <p className="text-xs sm:text-sm text-red-700 break-words">
-                                        <span className="font-medium">Loaned to:</span> {book.loanedTo}
+                                        <span className="font-medium">Loaned to:</span> {book.loanedToUsername}
                                     </p>
                                 </div>
                             )}
@@ -206,6 +217,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, className, distance }) => {
                 </div>
             </div>
         </Card>
+        </Link>
     );
 }
 export default BookCard;

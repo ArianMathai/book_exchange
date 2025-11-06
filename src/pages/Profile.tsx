@@ -3,11 +3,15 @@ import { useAuthenticator } from '@aws-amplify/ui-react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { User, MapPin, Mail, Edit3, Loader2 } from 'lucide-react';
+import { User, MapPin, Mail, Edit3, Loader2, Save, X, UserCircle } from 'lucide-react';
 import { client } from '@/lib/amplifyClient';
-import { fetchUserAttributes } from 'aws-amplify/auth';
+import { fetchUserAttributes, updateUserAttribute } from 'aws-amplify/auth';
+import type { Schema } from '@/amplify/data/resource';
 
 interface UserData {
     email: string;
@@ -20,11 +24,22 @@ interface UserData {
     };
 }
 
+type PublicProfileType = Schema['PublicProfile']['type'];
+
 const Profile: React.FC = () => {
     const { user } = useAuthenticator();
     const [userData, setUserData] = useState<UserData | null>(null);
+    const [publicProfile, setPublicProfile] = useState<PublicProfileType | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    
+    // Form state for editing
+    const [editForm, setEditForm] = useState({
+        username: '',
+        bio: ''
+    });
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -47,10 +62,23 @@ const Profile: React.FC = () => {
                         email: attributes.email || 'No email',
                     });
                 }
+
+                // Fetch public profile
+                const profileResult = await client.models.PublicProfile.list({
+                    filter: { userId: { eq: sub } }
+                });
+
+                if (profileResult.data && profileResult.data.length > 0) {
+                    const profile = profileResult.data[0];
+                    setPublicProfile(profile);
+                    setEditForm({
+                        username: profile.username || '',
+                        bio: profile.bio || ''
+                    });
+                }
             } catch (err) {
                 console.error('Error fetching user data:', err);
                 setError('Failed to load profile data');
-                console.log("ERROR: ", error)
             } finally {
                 setIsLoading(false);
             }
@@ -58,6 +86,63 @@ const Profile: React.FC = () => {
 
         fetchUserData();
     }, []);
+
+    const handleEditProfile = () => {
+        setIsEditingProfile(true);
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditingProfile(false);
+        // Reset form to current values
+        if (publicProfile) {
+            setEditForm({
+                username: publicProfile.username || '',
+                bio: publicProfile.bio || ''
+            });
+        }
+    };
+
+    const handleSaveProfile = async () => {
+        setIsSaving(true);
+        setError(null);
+
+        try {
+            if (!publicProfile) {
+                throw new Error('No public profile found');
+            }
+
+            // Update the public profile
+            const updateResult = await client.models.PublicProfile.update({
+                id: publicProfile.id,
+                username: editForm.username,
+                bio: editForm.bio || null
+            });
+
+            if (updateResult.data) {
+                setPublicProfile(updateResult.data);
+                
+                // Also update the preferredUsername in Cognito
+                try {
+                    await updateUserAttribute({
+                        userAttribute: {
+                            attributeKey: 'preferred_username',
+                            value: editForm.username
+                        }
+                    });
+                } catch (cognitoErr) {
+                    console.error('Failed to update Cognito username:', cognitoErr);
+                    // Continue even if Cognito update fails
+                }
+                
+                setIsEditingProfile(false);
+            }
+        } catch (err) {
+            console.error('Error saving profile:', err);
+            setError('Failed to save profile changes');
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const hasAddressInfo = userData?.address || userData?.city || userData?.postalCode;
 
@@ -92,7 +177,114 @@ const Profile: React.FC = () => {
                     </CardHeader>
                 </Card>
 
-                {/* User Information */}
+                {/* Public Profile */}
+                <Card className="shadow-lg border-slate-200">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg flex items-center">
+                                <UserCircle className="w-5 h-5 mr-2 text-slate-600" />
+                                Public Profile
+                            </CardTitle>
+                            {!isEditingProfile && (
+                                <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={handleEditProfile}
+                                >
+                                    <Edit3 className="w-4 h-4 mr-2" />
+                                    Edit
+                                </Button>
+                            )}
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {isEditingProfile ? (
+                            <>
+                                <div className="space-y-2">
+                                    <Label htmlFor="username">Username</Label>
+                                    <Input
+                                        id="username"
+                                        value={editForm.username}
+                                        onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                                        placeholder="Enter your display name"
+                                        disabled={isSaving}
+                                    />
+                                    <p className="text-xs text-slate-500">This is how other users will see you</p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="bio">Bio</Label>
+                                    <Textarea
+                                        id="bio"
+                                        value={editForm.bio}
+                                        onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                                        placeholder="Tell others about yourself..."
+                                        rows={4}
+                                        disabled={isSaving}
+                                    />
+                                    <p className="text-xs text-slate-500">Optional: Share your interests or favorite genres</p>
+                                </div>
+
+                                <div className="flex gap-2 pt-2">
+                                    <Button 
+                                        onClick={handleSaveProfile}
+                                        disabled={isSaving || !editForm.username.trim()}
+                                        className="bg-emerald-600 hover:bg-emerald-700"
+                                    >
+                                        {isSaving ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="w-4 h-4 mr-2" />
+                                                Save Changes
+                                            </>
+                                        )}
+                                    </Button>
+                                    <Button 
+                                        variant="outline"
+                                        onClick={handleCancelEdit}
+                                        disabled={isSaving}
+                                    >
+                                        <X className="w-4 h-4 mr-2" />
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="space-y-3">
+                                    <div>
+                                        <p className="text-sm text-slate-600 font-medium mb-1">Username</p>
+                                        <p className="text-slate-800">{publicProfile?.username || 'Not set'}</p>
+                                    </div>
+                                    
+                                    <div>
+                                        <p className="text-sm text-slate-600 font-medium mb-1">Email</p>
+                                        <p className="text-slate-800">{publicProfile?.email || userData?.email || 'Not set'}</p>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-sm text-slate-600 font-medium mb-1">Bio</p>
+                                        <p className="text-slate-800">
+                                            {publicProfile?.bio || <span className="text-slate-400 italic">No bio added yet</span>}
+                                        </p>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {error && (
+                            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-200">
+                                {error}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Account Details */}
                 <Card className="shadow-lg border-slate-200">
                     <CardHeader>
                         <CardTitle className="text-lg flex items-center">
@@ -102,19 +294,11 @@ const Profile: React.FC = () => {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex justify-between items-center py-2">
-                            <span className="text-slate-600 font-medium">Username:</span>
+                            <span className="text-slate-600 font-medium">Login Email:</span>
                             <Badge variant="secondary" className="text-sm">
                                 {user?.signInDetails?.loginId || 'Guest'}
                             </Badge>
                         </div>
-
-
-                        {error && (
-                            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-200">
-                                <Separator />
-                                {error}
-                            </div>
-                        )}
                     </CardContent>
                 </Card>
 
@@ -158,7 +342,7 @@ const Profile: React.FC = () => {
 
                                 <div className="flex justify-end">
                                     <Button asChild variant="outline" className="hover:bg-slate-50">
-                                        <Link to="/setup" className="flex items-center">
+                                        <Link to="/app/setup" className="flex items-center">
                                             <Edit3 className="w-4 h-4 mr-2" />
                                             Change Home Address
                                         </Link>
@@ -172,7 +356,7 @@ const Profile: React.FC = () => {
                                     No home address set up yet. Add your address to help find books near you.
                                 </p>
                                 <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
-                                    <Link to="/setup" className="flex items-center">
+                                    <Link to="/app/setup" className="flex items-center">
                                         <MapPin className="w-4 h-4 mr-2" />
                                         Set Up Home Address
                                     </Link>

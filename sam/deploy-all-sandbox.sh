@@ -3,7 +3,6 @@
 # Deploy all Lambda functions in sam/ to the Amplify Sandbox environment,
 # using the same approach as your per-function deploy-sandbox script.
 
-# Not yet tested
 
 set -u
 

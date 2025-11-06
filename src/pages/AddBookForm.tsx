@@ -395,6 +395,18 @@ const AddBookForm: React.FC = () => {
                 return;
             }
 
+            // Fetch user's public profile to get username
+            const profileResult = await client.models.PublicProfile.list({
+                filter: { userId: { eq: sub } }
+            });
+
+            const userProfile = profileResult.data?.[0];
+            if (!userProfile) {
+                console.error('❌ User public profile not found');
+                setErrors(prev => ({ ...prev, message: 'User profile not found' }));
+                return;
+            }
+
             // Prepare image data
             let imageUrl: string | null = null;
 
@@ -422,7 +434,9 @@ const AddBookForm: React.FC = () => {
                 isbn: formData.isbn.trim() || null,
                 ownerId: sub,
                 ownerEmail: ownerEmail,
-                createdAt: Math.floor(Date.now() / 1000), // Unix timestamp
+                userName: userProfile.username,
+                originalOwnerUsername: userProfile.username,
+                //createdAt: Math.floor(Date.now() / 1000), // Unix timestamp
                 loanedOut: false,
                 loanedTo: null,
                 imageUrl: imageUrl,
@@ -467,7 +481,7 @@ const AddBookForm: React.FC = () => {
 
             // Redirect after success
             setTimeout(() => {
-                navigate('/library');
+                navigate('/app/library');
             }, 2000);
 
         } catch (error) {
@@ -483,7 +497,7 @@ const AddBookForm: React.FC = () => {
 
     // Handle cancel/back
     const handleCancel = () => {
-        navigate("/library");
+        navigate("/app/library");
     };
 
     if (submitSuccess) {

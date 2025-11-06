@@ -3,12 +3,16 @@ import { useAuthenticator } from '@aws-amplify/ui-react';
 import { Button } from '@/components/ui/button';
 import {Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription} from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Menu, Home, Book, Plus, User, LogOut, Sparkles } from 'lucide-react';
+import {Menu, Home, Book, Plus, User, LogOut, Sparkles, Bell} from 'lucide-react';
 
 import {useEffect, useState} from 'react';
 import {fetchUserAttributes} from "aws-amplify/auth";
 import {client} from "@/lib/amplifyClient.ts";
+import {useNotifications} from "@/context/notificationsContext.tsx";
+import {Toaster} from "@/components/ui/sonner.tsx";
+
+
+//TODO: Enable real time subscriptions, so that the badge showing number of unread notifications, shows this number
 
 // Collapsible menu on mobile and sticky menu on desktop
 const BurgerMenu: React.FC = () => {
@@ -17,20 +21,25 @@ const BurgerMenu: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [checkingProfile, setCheckingProfile] = useState(true);
 
+    const { unreadCount } = useNotifications();
+
 
     const menuItems = [
-        { to: '/', icon: Home, label: 'Home', description: 'Dashboard & Overview' },
-        { to: '/library', icon: Book, label: 'Library', description: 'Manage your library' },
-        { to: '/add-book', icon: Plus, label: 'Add Book', description: 'Share a new book', badge: 'New' },
-        { to: '/profile', icon: User, label: 'Profile', description: 'Account settings' },
+        { to: '/app/home', icon: Home, label: 'Home', description: 'Dashboard & Overview' },
+        { to: '/app/library', icon: Book, label: 'Library', description: 'Manage your library' },
+        { to: '/app/add-book', icon: Plus, label: 'Add Book', description: 'Share a new book' },
+        { to: '/app/inbox', icon: Bell, label: 'Inbox', description: 'Messages & alerts' },
+        { to: '/app/profile', icon: User, label: 'Profile', description: 'Account settings' },
     ];
 
-    // Check if user has set up location, else -> redirect to setup page
+    // Check if user has set up location and public profile
     useEffect(() => {
         const checkUserProfile = async () => {
             try {
                 const attributes = await fetchUserAttributes();
                 const sub = attributes?.sub;
+                const email = attributes?.email;
+                const preferredUsername = attributes?.preferred_username;
 
                 if (!sub) {
                     console.error("❌ No Cognito user ID found. Signing out...");
@@ -38,11 +47,28 @@ const BurgerMenu: React.FC = () => {
                     return;
                 }
 
+                // Check if user has location setup
                 const res = await client.models.User.get({ sub });
 
                 if (!res?.data || !res.data.coordinates) {
-                    navigate("/setup");
+                    navigate("/app/setup");
                     return;
+                }
+
+                // Check if user has a public profile, create one if not
+                const profileResult = await client.models.PublicProfile.list({
+                    filter: { userId: { eq: sub } }
+                });
+
+                if (!profileResult.data || profileResult.data.length === 0) {
+                    // Create public profile with default values
+                    await client.models.PublicProfile.create({
+                        userId: sub,
+                        username: preferredUsername || `user_${sub.slice(-8)}` || 'User',
+                        email: email || '',
+                        bio: ''
+                    });
+                    console.log("✅ Created public profile for user");
                 }
             } catch (err) {
                 console.error("❌ Error checking user profile:", err);
@@ -53,11 +79,16 @@ const BurgerMenu: React.FC = () => {
         };
 
         checkUserProfile();
-    }, []);
+    }, [navigate, signOut]);
 
+
+    useEffect(() => {
+        console.log("UnreadCount: ", unreadCount);
+    }, [unreadCount]);
 
     const handleSignOut = () => {
         setIsOpen(false);
+        navigate("/");
         signOut();
     };
 
@@ -107,11 +138,17 @@ const BurgerMenu: React.FC = () => {
                                 >
                                     <IconComponent className="w-4 h-4" />
                                     <span className="font-medium">{item.label}</span>
-                                    {item.badge && (
-                                        <Badge variant="secondary" className="ml-1 text-xs bg-emerald-200 text-emerald-900 hover:bg-emerald-100">
-                                            {item.badge}
-                                        </Badge>
+
+                                    {item.to === '/app/inbox' && unreadCount > 0 && (
+                                        <span
+                                            className="ml-0 -mt-px inline-flex h-4 w-4 items-center justify-center rounded-full bg-amber-600 text-white text-[10px] font-semibold leading-none align-middle"
+                                            aria-label={`${unreadCount} unread`}
+                                        >
+                                            {unreadCount > 9 ? '9+' : unreadCount}
+                                        </span>
                                     )}
+
+
                                     <div className="absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                 </Button>
                             );
@@ -188,10 +225,13 @@ const BurgerMenu: React.FC = () => {
                                                             <span className="font-semibold text-emerald-50 group-hover:text-white transition-colors duration-300">
                                                                 {item.label}
                                                             </span>
-                                                            {item.badge && (
-                                                                <Badge variant="secondary" className="bg-emerald-200 text-emerald-900 text-xs">
-                                                                    {item.badge}
-                                                                </Badge>
+                                                            {item.to === '/app/inbox' && unreadCount > 0 && (
+                                                                <span
+                                                                    className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-600 text-white text-xs font-semibold leading-none"
+                                                                    aria-label={`${unreadCount} unread`}
+                                                                >
+                                                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                                                </span>
                                                             )}
                                                         </div>
                                                         <p className="text-emerald-300/80 text-sm mt-1 group-hover:text-emerald-200/90 transition-colors duration-300">
@@ -242,6 +282,7 @@ const BurgerMenu: React.FC = () => {
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
                 <Outlet />
+                <Toaster position={"top-center"} richColors/>
             </main>
         </div>
     );

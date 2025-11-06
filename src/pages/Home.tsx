@@ -32,6 +32,7 @@ const Home: React.FC = () => {
     useEffect(() => {
         const fetchBooks = async () => {
             if (!data?.results) return;
+            console.log("data", data)
 
             const fetchedBooks = await Promise.all(
                 data.results.map(async (entry) => {
@@ -40,6 +41,8 @@ const Home: React.FC = () => {
 
                         // Only proceed if we have a valid book with required fields
                         if (!book || !book.id || !book.title || !book.author || !book.ownerEmail) {
+                            console.log("book", entry);
+                            console.log("found book", book);
                             console.warn(`Book ${entry.id} missing required fields`);
                             return null;
                         }
@@ -51,7 +54,7 @@ const Home: React.FC = () => {
                             author: book.author,
                             ownerEmail: book.ownerEmail,
                             isbn: book.isbn || null,
-                            createdAt: book.createdAt || Date.now(),
+                            createdAt: book.createdAt,
                             loanedOut: book.loanedOut || false,
                             loanedTo: book.loanedTo || null,
                             imageUrl: book.imageUrl || null,
