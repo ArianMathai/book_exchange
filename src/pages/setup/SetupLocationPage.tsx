@@ -205,7 +205,7 @@ const SetupLocationPage = () => {
                 }
             }
 
-            navigate('/library');
+            navigate('/app/library');
         } catch (err) {
             console.error('Failed to save user location:', err);
             setError('Failed to save your location. Try again.');

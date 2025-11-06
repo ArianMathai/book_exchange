@@ -30,30 +30,30 @@ const Inbox: React.FC = () => {
             case 'loan_rejected':
                 // Navigate to loan request detail page
                 if (notification.loanRequestId) {
-                    navigate(`/loan-request/${notification.loanRequestId}`);
+                    navigate(`/app/loan-request/${notification.loanRequestId}`);
                 }
                 break;
                 
             case 'handoff_ready':
                 // Navigate to handoff coordination page
                 if (notification.handoffId) {
-                    navigate(`/handoff/${notification.handoffId}`);
+                    navigate(`/app/handoff/${notification.handoffId}`);
                 }
                 break;
                 
             case 'loan_approved':
                 // For approved loans, go to handoff page if available, otherwise loan request
                 if (notification.handoffId) {
-                    navigate(`/handoff/${notification.handoffId}`);
+                    navigate(`/app/handoff/${notification.handoffId}`);
                 } else if (notification.loanRequestId) {
-                    navigate(`/loan-request/${notification.loanRequestId}`);
+                    navigate(`/app/loan-request/${notification.loanRequestId}`);
                 }
                 break;
                 
             default:
                 // For other notification types, try to navigate to loan request if available
                 if (notification.loanRequestId) {
-                    navigate(`/loan-request/${notification.loanRequestId}`);
+                    navigate(`/app/loan-request/${notification.loanRequestId}`);
                 }
                 break;
         }

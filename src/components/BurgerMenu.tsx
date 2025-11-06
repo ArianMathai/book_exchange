@@ -25,11 +25,11 @@ const BurgerMenu: React.FC = () => {
 
 
     const menuItems = [
-        { to: '/', icon: Home, label: 'Home', description: 'Dashboard & Overview' },
-        { to: '/library', icon: Book, label: 'Library', description: 'Manage your library' },
-        { to: '/add-book', icon: Plus, label: 'Add Book', description: 'Share a new book' },
-        { to: '/inbox', icon: Bell, label: 'Inbox', description: 'Messages & alerts' },
-        { to: '/profile', icon: User, label: 'Profile', description: 'Account settings' },
+        { to: '/app/home', icon: Home, label: 'Home', description: 'Dashboard & Overview' },
+        { to: '/app/library', icon: Book, label: 'Library', description: 'Manage your library' },
+        { to: '/app/add-book', icon: Plus, label: 'Add Book', description: 'Share a new book' },
+        { to: '/app/inbox', icon: Bell, label: 'Inbox', description: 'Messages & alerts' },
+        { to: '/app/profile', icon: User, label: 'Profile', description: 'Account settings' },
     ];
 
     // Check if user has set up location and public profile
@@ -51,7 +51,7 @@ const BurgerMenu: React.FC = () => {
                 const res = await client.models.User.get({ sub });
 
                 if (!res?.data || !res.data.coordinates) {
-                    navigate("/setup");
+                    navigate("/app/setup");
                     return;
                 }
 
@@ -79,7 +79,7 @@ const BurgerMenu: React.FC = () => {
         };
 
         checkUserProfile();
-    }, []);
+    }, [navigate, signOut]);
 
 
     useEffect(() => {
@@ -88,6 +88,7 @@ const BurgerMenu: React.FC = () => {
 
     const handleSignOut = () => {
         setIsOpen(false);
+        navigate("/");
         signOut();
     };
 
@@ -138,7 +139,7 @@ const BurgerMenu: React.FC = () => {
                                     <IconComponent className="w-4 h-4" />
                                     <span className="font-medium">{item.label}</span>
 
-                                    {item.to === '/inbox' && unreadCount > 0 && (
+                                    {item.to === '/app/inbox' && unreadCount > 0 && (
                                         <span
                                             className="ml-0 -mt-px inline-flex h-4 w-4 items-center justify-center rounded-full bg-amber-600 text-white text-[10px] font-semibold leading-none align-middle"
                                             aria-label={`${unreadCount} unread`}
@@ -224,7 +225,7 @@ const BurgerMenu: React.FC = () => {
                                                             <span className="font-semibold text-emerald-50 group-hover:text-white transition-colors duration-300">
                                                                 {item.label}
                                                             </span>
-                                                            {item.to === '/inbox' && unreadCount > 0 && (
+                                                            {item.to === '/app/inbox' && unreadCount > 0 && (
                                                                 <span
                                                                     className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-600 text-white text-xs font-semibold leading-none"
                                                                     aria-label={`${unreadCount} unread`}

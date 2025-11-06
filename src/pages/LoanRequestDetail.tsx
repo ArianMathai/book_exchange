@@ -170,7 +170,7 @@ const LoanRequestDetail: React.FC = () => {
             toast.success("📚 Loan Approved!", {
                 description: "Both parties have been notified and a chat has been created to coordinate the book handoff."
             });
-            navigate('/inbox');
+            navigate('/app/inbox');
         },
         onError: (error) => {
             console.error('Failed to approve loan request:', error);
@@ -218,7 +218,7 @@ const LoanRequestDetail: React.FC = () => {
             toast.success("Request Declined", {
                 description: "The borrower has been notified of your decision."
             });
-            navigate('/inbox');
+            navigate('/app/inbox');
         },
         onError: (error) => {
             console.error('Failed to deny loan request:', error);
@@ -259,7 +259,7 @@ const LoanRequestDetail: React.FC = () => {
                         <p className="text-center text-red-600">Failed to load loan request details.</p>
                         <Button 
                             variant="outline" 
-                            onClick={() => navigate('/inbox')}
+                            onClick={() => navigate('/app/inbox')}
                             className="mt-4 mx-auto block"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -300,7 +300,7 @@ const LoanRequestDetail: React.FC = () => {
             <div className="mb-6">
                 <Button 
                     variant="ghost" 
-                    onClick={() => navigate('/inbox')}
+                    onClick={() => navigate('/app/inbox')}
                     className="mb-4"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />

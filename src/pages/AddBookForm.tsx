@@ -481,7 +481,7 @@ const AddBookForm: React.FC = () => {
 
             // Redirect after success
             setTimeout(() => {
-                navigate('/library');
+                navigate('/app/library');
             }, 2000);
 
         } catch (error) {
@@ -497,7 +497,7 @@ const AddBookForm: React.FC = () => {
 
     // Handle cancel/back
     const handleCancel = () => {
-        navigate("/library");
+        navigate("/app/library");
     };
 
     if (submitSuccess) {

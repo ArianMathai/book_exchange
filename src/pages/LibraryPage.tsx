@@ -133,7 +133,7 @@ const LibraryPage: React.FC = () => {
                             Filter
                         </Button>
                         <Button asChild className="bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-xl transition-all duration-200">
-                            <Link to="/add-book" className="flex items-center">
+                            <Link to="/app/add-book" className="flex items-center">
                                 <Plus className="w-4 h-4 mr-2" />
                                 Add Book
                             </Link>
@@ -231,7 +231,7 @@ const LibraryPage: React.FC = () => {
                             <h3 className="text-lg font-medium text-slate-900 mb-2">No books in your library</h3>
                             <p className="text-slate-600 mb-6">Get started by adding your first book to the collection.</p>
                             <Button asChild className="bg-red-600 hover:bg-red-700">
-                                <Link to="/add-book">
+                                <Link to="/app/add-book">
                                     <Plus className="w-4 h-4 mr-2" />
                                     Add Your First Book
                                 </Link>

@@ -90,7 +90,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, className, distance }) => {
 
     return (
         <Link
-            to={`/book/${book.id}`}
+            to={`/app/book/${book.id}`}
             aria-label={`View details for ${book.title}`}
             className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500 rounded-lg"
         >

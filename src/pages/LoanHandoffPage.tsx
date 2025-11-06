@@ -160,7 +160,7 @@ const LoanHandoffPage: React.FC = () => {
                     toast.success("🎉 Handoff Complete!", {
                         description: "The loan will be activated automatically. You'll receive a notification when it's ready."
                     });
-                    navigate('/inbox');
+                    navigate('/app/inbox');
                 }
             },
             error: (error) => {
@@ -246,7 +246,7 @@ const LoanHandoffPage: React.FC = () => {
                         <p className="text-center text-red-600">Failed to load handoff details.</p>
                         <Button 
                             variant="outline" 
-                            onClick={() => navigate('/inbox')}
+                            onClick={() => navigate('/app/inbox')}
                             className="mt-4 mx-auto block"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -264,7 +264,7 @@ const LoanHandoffPage: React.FC = () => {
             <div className="mb-6">
                 <Button 
                     variant="ghost" 
-                    onClick={() => navigate('/inbox')}
+                    onClick={() => navigate('/app/inbox')}
                     className="mb-4"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />

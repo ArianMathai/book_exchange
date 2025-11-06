@@ -342,7 +342,7 @@ const Profile: React.FC = () => {
 
                                 <div className="flex justify-end">
                                     <Button asChild variant="outline" className="hover:bg-slate-50">
-                                        <Link to="/setup" className="flex items-center">
+                                        <Link to="/app/setup" className="flex items-center">
                                             <Edit3 className="w-4 h-4 mr-2" />
                                             Change Home Address
                                         </Link>
@@ -356,7 +356,7 @@ const Profile: React.FC = () => {
                                     No home address set up yet. Add your address to help find books near you.
                                 </p>
                                 <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
-                                    <Link to="/setup" className="flex items-center">
+                                    <Link to="/app/setup" className="flex items-center">
                                         <MapPin className="w-4 h-4 mr-2" />
                                         Set Up Home Address
                                     </Link>
