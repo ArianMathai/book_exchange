@@ -1,0 +1,10 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "get-book-indexes-prod"
+resolve_s3 = true
+s3_prefix = "get-book-indexes-prod"
+region = "eu-north-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "CognitoUserPoolId=\"eu-north-1_ncYQOqnAD\""
+image_repositories = []
